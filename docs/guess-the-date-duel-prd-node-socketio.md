@@ -91,7 +91,7 @@ For each player and round, let `d` be the smallest absolute calendar-day error a
 
 **Match points:** Sum of five round scores (maximum 25,000).
 
-**Tiebreakers:** (1) more exact solves, (2) smaller sum of best absolute day errors, using a fixed maximum penalty for rounds with no valid guess, (3) draw. Time is not a tiebreaker.
+**Tiebreakers:** (1) more exact solves, (2) smaller sum of best absolute day errors, using a fixed penalty of 182,621 days (the maximum error between 1600-01-01 and 2099-12-31) for rounds with no valid guess, (3) draw. Time is not a tiebreaker.
 
 > Product balancing note: These thresholds and formulas are initial values, to be tuned after playtesting. Keep scoring in a shared, versioned server module, but never trust scores submitted by clients.
 
