@@ -11,6 +11,36 @@ This plan splits the duel PRD into small, independently verifiable stages. Imple
 - Use npm workspaces, one Node.js process, and in-memory room state. Do not add a database, Redis, Docker orchestration, accounts, chat, matchmaking, or other post-MVP work.
 - End each stage by running its focused tests plus the repository build, then update the checklist below.
 
+## Three-person delivery
+
+Use these ownership boundaries to keep work parallel and merge conflicts small.
+
+| Developer | Primary ownership | Main stages |
+|---|---|---|
+| **A — Contracts and game domain** | `shared/src/**`, `server/src/game/**`, domain unit tests | Stage 2 contracts/rules and domain work needed by Stages 5–6 |
+| **B — Server and content** | `server/src/content/**`, `server/src/routes/**`, `server/src/rooms/**`, `server/src/socket/**`, `server/src/index.ts`, server integration tests | Stages 2–6 backend and Stage 9 backend hardening |
+| **C — Client** | `client/src/**`, client tests and styles | Stage 2 client safety, Stages 7–8, and Stage 9 client hardening |
+
+### Coordination rules
+
+- Developer A owns shared protocol types and error codes. B and C consume them rather than creating duplicate request/response types.
+- A keeps game functions pure; B owns room state, timers, HTTP, and Socket.IO orchestration around those functions.
+- C does not import server-only modules or event answers.
+- A dependency change includes the relevant workspace `package.json` and root `package-lock.json` in the same commit. Rebase and regenerate the lockfile with `npm install`; do not hand-merge it.
+- Cross-owner changes are split into coordinated atomic commits. The owner of a path makes the edit.
+- Every branch must pass its focused tests and `npm run build` before merge.
+
+### Parallel work order
+
+1. **Contract gate:** A first merges the answer-safe shared DTOs, package exports, and structured error codes.
+2. **Stage 2 in parallel:**
+   - A implements dates, feedback, clue progression, scoring, best-guess selection, and tiebreaker tests.
+   - B adds the event schema, server catalog loader, validation tests, and server-side catalog copy.
+   - C, after B's catalog commit, removes client answer imports/catalog data and leaves a buildable duel shell; C may then start Home/Lobby presentational components against shared DTO fixtures.
+3. **Lobby in parallel:** B implements Stages 3–4 while C builds and then connects the Home/Lobby flow. A handles only requested contract or domain changes.
+4. **Gameplay in parallel:** A owns game-rule changes, B owns Stages 5–6 orchestration, and C owns the round/results client from Stage 8.
+5. **Hardening:** A validates content/rule coverage, B handles reconnect/security/cleanup, and C handles client recovery/accessibility. Finish with joint two-browser testing.
+
 ## Stages
 
 ### Stage 0 — Repository cleanup
