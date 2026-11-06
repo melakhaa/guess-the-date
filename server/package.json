@@ -6,5 +6,8 @@
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@dateguessr/shared": "0.1.0"
   }
 }
