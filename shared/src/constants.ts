@@ -1,0 +1,9 @@
+export const MATCH_ROUNDS = 5;
+export const ROUND_DURATION_MS = 60_000;
+export const ROUND_COUNTDOWN_MS = 3_000;
+export const ROUND_RESULTS_DURATION_MS = 8_000;
+export const MAX_GUESSES = 6;
+export const MAX_CLUES = 5;
+export const MIN_DATE_YEAR = 1600;
+export const MAX_DATE_YEAR = 2099;
+export const ROOM_CAPACITY = 2;
