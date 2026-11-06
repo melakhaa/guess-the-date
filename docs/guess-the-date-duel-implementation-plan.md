@@ -1,4 +1,4 @@
-# DateGuessr Duel implementation plan
+# Guess the Date Duel implementation plan
 
 This plan splits the duel PRD into small, independently verifiable stages. Implement **one stage per session/PR** so later work does not need to stay in context.
 

@@ -1,4 +1,4 @@
-const PREFIX = "dateguessr:v1";
+const PREFIX = "guess-the-date:v1";
 
 export const unlimitedKey = `${PREFIX}:unlimited`;
 export const recentKey = `${PREFIX}:recent`;

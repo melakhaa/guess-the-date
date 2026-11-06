@@ -359,7 +359,7 @@ export function shareText(round: RoundState): string {
   const score = round.status === "won" ? `${round.guesses.length}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`;
 
   return [
-    `DateGuessr #${round.puzzleId} 📅`,
+    `Guess the Date #${round.puzzleId} 📅`,
     `Score: ${score}`,
     round.guesses.map((guess) => symbols[guess.temperature]).join(" "),
     "Can you uncover the mystery date?",

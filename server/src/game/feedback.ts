@@ -1,4 +1,4 @@
-import { MAX_CLUES, type GuessDirection, type Temperature } from "@dateguessr/shared";
+import { MAX_CLUES, type GuessDirection, type Temperature } from "@guess-the-date/shared";
 import { calendarDayDifference } from "./dates.js";
 
 export interface EvaluatedGuess {

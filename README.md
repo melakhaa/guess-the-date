@@ -1,8 +1,8 @@
-# DateGuessr
+# Guess the Date
 
 Guess the exact date of a historical event using progressive clues and proximity feedback.
 
-The current browser app supports daily and unlimited single-player puzzles. **DateGuessr Duel is in development:** a planned two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts and server game rules are implemented, but the multiplayer server and client flow are not yet runnable.
+The current browser app supports daily and unlimited single-player puzzles. **Guess the Date Duel is in development:** a planned two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts and server game rules are implemented, but the multiplayer server and client flow are not yet runnable.
 
 ## Get started
 
@@ -25,7 +25,7 @@ npm run build  # Build the client and type-check server/shared
 Run server game-rule tests on their own:
 
 ```sh
-npm run test --workspace @dateguessr/server
+npm run test --workspace @guess-the-date/server
 ```
 
 The production client build is written to `client/dist/`.
@@ -43,8 +43,8 @@ The historical-event catalog currently lives in `client/src/data/events.json`. M
 
 ## Development guides
 
-- [Duel product requirements](docs/dateguessr-duel-prd-node-socketio.md)
-- [Implementation plan and progress](docs/dateguessr-duel-implementation-plan.md)
+- [Duel product requirements](docs/guess-the-date-duel-prd-node-socketio.md)
+- [Implementation plan and progress](docs/guess-the-date-duel-implementation-plan.md)
 - [Testing convention](docs/testing-convention.md)
 - [Commit convention](docs/commit-convention.md)
 - [Visual hierarchy convention](docs/visual-hierarchy-convention.md)

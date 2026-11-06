@@ -1,6 +1,6 @@
-# DateGuessr
+# Guess the Date
 
-DateGuessr is a browser-based daily puzzle in which players use progressive clues and proximity feedback to guess the exact date of a historical event.
+Guess the Date is a browser-based daily puzzle in which players use progressive clues and proximity feedback to guess the exact date of a historical event.
 
 ## Project structure
 

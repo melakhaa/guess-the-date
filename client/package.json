@@ -1,5 +1,5 @@
 {
-  "name": "@dateguessr/client",
+  "name": "@guess-the-date/client",
   "private": true,
   "version": "0.1.0",
   "type": "module",

@@ -1,4 +1,4 @@
-import { MAX_GUESSES, type DuelErrorCode } from "@dateguessr/shared";
+import { MAX_GUESSES, type DuelErrorCode } from "@guess-the-date/shared";
 import { parseIsoDate } from "./dates.js";
 import { evaluateGuess, getVisibleClueCount, type EvaluatedGuess } from "./feedback.js";
 

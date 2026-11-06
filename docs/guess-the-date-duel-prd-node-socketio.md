@@ -1,4 +1,4 @@
-# DateGuessr Duel — Product Requirements Document
+# Guess the Date Duel — Product Requirements Document
 
 **Version:** 2.0 (MVP)  
 **Status:** Ready for implementation  
@@ -8,7 +8,7 @@
 
 ## 1. Product summary
 
-DateGuessr Duel is a mobile-friendly browser game in which two players simultaneously guess the exact calendar date of a mystery historical event. Both receive the same event, but independently unlock progressively clearer clues. Each round lasts 60 seconds. Players receive hot/cold and earlier/later feedback after each guess. Accuracy is the primary determinant of score.
+Guess the Date Duel is a mobile-friendly browser game in which two players simultaneously guess the exact calendar date of a mystery historical event. Both receive the same event, but independently unlock progressively clearer clues. Each round lasts 60 seconds. Players receive hot/cold and earlier/later feedback after each guess. Accuracy is the primary determinant of score.
 
 ### Goals
 - Start a private 1v1 match using a shareable invite link, without registration.
@@ -316,7 +316,7 @@ These are rough estimates for a developer already familiar with React/TypeScript
 ## 14. Repository layout
 
 ```text
-dateguessr/
+guess-the-date/
 ├── client/
 │   ├── src/
 │   │   ├── components/

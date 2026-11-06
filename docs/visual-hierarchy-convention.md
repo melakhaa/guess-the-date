@@ -1,6 +1,6 @@
 # Visual hierarchy
 
-Guidelines for laying out DateGuessr screens. The goal is one obvious thing to read and one obvious thing to do.
+Guidelines for laying out Guess the Date screens. The goal is one obvious thing to read and one obvious thing to do.
 
 ## Principles
 

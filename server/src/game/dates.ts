@@ -1,4 +1,4 @@
-import { MAX_DATE_YEAR, MIN_DATE_YEAR } from "@dateguessr/shared";
+import { MAX_DATE_YEAR, MIN_DATE_YEAR } from "@guess-the-date/shared";
 
 const DAY_MS = 86_400_000;
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;

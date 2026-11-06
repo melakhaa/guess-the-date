@@ -19,7 +19,7 @@ export function ResultPanel({
     const text = `${shareText(round)}\n${window.location.origin}`;
     try {
       if (navigator.share) {
-        await navigator.share({ text, title: "DateGuessr result" });
+        await navigator.share({ text, title: "Guess the Date result" });
         setShareStatus("Result shared.");
       } else {
         await navigator.clipboard.writeText(text);
