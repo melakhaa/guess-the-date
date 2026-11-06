@@ -19,5 +19,5 @@ DateGuessr is a browser-based daily puzzle in which players use progressive clue
 
 ## Conventions
 
-- [Conventional Commits](docs/conventional-commits.md)
-- [Visual hierarchy](docs/visual-hierarchy.md)
+- [Commit convention](docs/commit-convention.md)
+- [Visual hierarchy convention](docs/visual-hierarchy-convention.md)
