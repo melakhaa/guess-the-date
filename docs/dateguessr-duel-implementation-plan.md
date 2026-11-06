@@ -13,7 +13,7 @@ This plan splits the duel PRD into small, independently verifiable stages. Imple
 
 ## Stages
 
-### Stage 0 — Repository cleanup (current)
+### Stage 0 — Repository cleanup
 
 **Scope**
 - Remove generated output and stale TypeScript emissions: `dist/`, `*.tsbuildinfo`, `vite.config.js`, and `vite.config.d.ts`.
@@ -136,7 +136,7 @@ This plan splits the duel PRD into small, independently verifiable stages. Imple
 ## Progress
 
 - [x] Stage 0 — Repository cleanup
-- [ ] Stage 1 — Workspace skeleton
+- [x] Stage 1 — Workspace skeleton
 - [ ] Stage 2 — Contracts and server game kernel
 - [ ] Stage 3 — HTTP rooms and lobby state
 - [ ] Stage 4 — Socket attachment, readiness, and countdown
