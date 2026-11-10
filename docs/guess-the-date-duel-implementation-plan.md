@@ -167,11 +167,11 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
 
 - [x] Stage 0 — Repository cleanup
 - [x] Stage 1 — Workspace skeleton
-- [ ] Stage 2 — Contracts and server game kernel
+- [x] Stage 2 — Contracts and server game kernel
   - [x] Shared contracts and pure game rules, including round scoring, match totals, and tiebreakers.
-  - [ ] Server catalog schema, loader, and validation.
-  - [ ] Remove client catalog/answer imports before multiplayer ships.
-- [ ] Stage 3 — HTTP rooms and lobby state
+  - [x] Server catalog schema, loader, and validation.
+  - [x] Remove client catalog/answer imports before multiplayer ships; buildable duel placeholder replaces the single-player entry point.
+- [x] Stage 3 — HTTP rooms and lobby state
 - [ ] Stage 4 — Socket attachment, readiness, and countdown
 - [ ] Stage 5 — One authoritative playable round
 - [ ] Stage 6 — Five-round match and results
