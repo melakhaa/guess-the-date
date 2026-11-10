@@ -8,6 +8,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@guess-the-date/shared": "0.1.0"
+    "@guess-the-date/shared": "0.1.0",
+    "zod": "^4.6.7"
   }
 }

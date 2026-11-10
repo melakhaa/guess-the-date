@@ -1,1 +1,1 @@
-export {};
+import "./content/events.js";
