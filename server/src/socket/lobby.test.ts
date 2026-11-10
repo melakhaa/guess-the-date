@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { io, type Socket } from "socket.io-client";
 import type { MatchCountdownEvent, PlayerSession, RoomAttachAck, RoomStateEvent } from "@guess-the-date/shared";
 import { buildApp } from "../app.js";
+import { events } from "../content/events.js";
 
 const apps: ReturnType<typeof buildApp>[] = [];
 const clients: Socket[] = [];
@@ -36,6 +37,105 @@ async function attach(client: Socket, session: PlayerSession): Promise<RoomAttac
 }
 
 describe("socket lobby", () => {
+  it("starts a shared round and privately accepts guesses before revealing one result", async () => {
+    const { url, host, guest } = await setup();
+    const first = await connect(url);
+    const second = await connect(url);
+    await attach(first, host);
+    await attach(second, guest);
+    const starts: unknown[][] = [[], []];
+    const results: unknown[][] = [[], []];
+    const privateEvents: unknown[] = [];
+    const statuses: unknown[] = [];
+    second.on("opponent:status", (status) => statuses.push(status));
+    [first, second].forEach((client, index) => {
+      client.on("round:start", (event) => starts[index].push(event));
+      client.on("round:result", (event) => results[index].push(event));
+      client.on("guess:result", (event) => privateEvents.push(event));
+    });
+    await first.timeout(1000).emitWithAck("player:ready", { ready: true, requestId: "ready" });
+    await second.timeout(1000).emitWithAck("player:ready", { ready: true, requestId: "ready" });
+    await vi.waitFor(() => expect(starts[0]).toHaveLength(1), { timeout: 4500 });
+    const synced = await second.timeout(1000).emitWithAck("room:sync", { requestId: "sync" });
+    expect(starts[1]).toEqual(starts[0]);
+    const start = starts[0][0] as { clue: string; roundStartedAt: number; roundEndsAt: number };
+    expect(start.roundEndsAt - start.roundStartedAt).toBe(60000);
+    expect(synced.state).toMatchObject({ phase: "playing", round: 1, countdownStartsAt: null });
+    expect(synced.ownRound).toMatchObject({ clues: [start.clue], guesses: [], roundStartedAt: start.roundStartedAt, roundEndsAt: start.roundEndsAt });
+    const event = events.find((candidate) => candidate.clues[0] === start.clue)!;
+    for (const secret of [event.date, event.id, event.clues[1], "errorDays", "sources"]) {
+      expect(JSON.stringify([starts, synced])).not.toContain(secret);
+    }
+    statuses.length = 0;
+    const wrong = { round: 1, date: event.date === "1600-01-01" ? "2099-12-31" : "1600-01-01", requestId: "wrong" };
+    const feedback = await first.timeout(1000).emitWithAck("guess:submit", wrong);
+    expect(feedback).toMatchObject({ ok: true, guessesUsed: 1, solved: false, finished: false, newClue: event.clues[1] });
+    expect(await first.timeout(1000).emitWithAck("guess:submit", wrong)).toEqual(feedback);
+    expect(await first.timeout(1000).emitWithAck("guess:submit", { ...wrong, requestId: "duplicate" })).toMatchObject({ ok: false, error: { code: "DUPLICATE_GUESS" } });
+    expect(await first.timeout(1000).emitWithAck("guess:submit", { ...wrong, round: 2, requestId: "round-2" })).toMatchObject({ ok: false, error: { code: "ROUND_MISMATCH" } });
+    for (const payload of [null, {}, { ...wrong, date: "2000-02-30", requestId: "invalid-date" }, { ...wrong, score: 5000 }, { ...wrong, requestId: "x".repeat(129) }]) {
+      expect(await first.timeout(1000).emitWithAck("guess:submit", payload)).toMatchObject({ ok: false });
+    }
+    first.emit("guess:submit", { round: 1, date: event.date, requestId: "no-ack" });
+    expect((await first.timeout(1000).emitWithAck("room:sync", { requestId: "no-ack-check" })).ownRound.guesses).toHaveLength(1);
+    const beforeSolve = await second.timeout(1000).emitWithAck("room:sync", { requestId: "private" });
+    expect(beforeSolve.ownRound).toMatchObject({ clues: [event.clues[0]], guesses: [] });
+    expect(statuses).toEqual([]);
+    const request = { round: 1, date: event.date, requestId: "solve" };
+    const response = await first.timeout(1000).emitWithAck("guess:submit", request);
+    expect(response).toEqual({ ok: true, requestId: "solve", temperature: "correct", direction: "exact", guessesUsed: 2, solved: true, finished: true });
+    expect(await first.timeout(1000).emitWithAck("guess:submit", request)).toEqual(response);
+    const opponent = await second.timeout(1000).emitWithAck("room:sync", { requestId: "sync-2" });
+    expect(opponent.ownRound.guesses).toEqual([]);
+    expect(results).toEqual([[], []]);
+    await second.timeout(1000).emitWithAck("guess:submit", request);
+    await Promise.all([first, second].map((client) => client.timeout(1000).emitWithAck("room:sync", { requestId: "sync-3" })));
+    expect(results[0]).toHaveLength(1);
+    expect(results[1]).toEqual(results[0]);
+    expect(results[0][0]).toMatchObject({ round: 1, event: { date: event.date }, players: [{ points: 4900 }, { points: 5000 }] });
+    expect(await first.timeout(1000).emitWithAck("guess:submit", request)).toEqual(response);
+    expect(results[0]).toHaveLength(1);
+    expect(privateEvents).toEqual([]); // Guess feedback uses only the requesting socket's acknowledgment.
+  }, 10000);
+
+  it("executes fixed deadlines, preserves a disconnected round, and recovers the result on sync", async () => {
+    const { url, host, guest } = await setup();
+    const first = await connect(url);
+    const second = await connect(url);
+    await attach(first, host);
+    await attach(second, guest);
+
+    const results: unknown[] = [];
+    first.on("round:result", (event) => results.push(event));
+    await first.emitWithAck("player:ready", { ready: true, requestId: "ready" });
+    await second.emitWithAck("player:ready", { ready: true, requestId: "ready" });
+    expect((await first.emitWithAck("room:sync", { requestId: "before" })).state.phase).toBe("countdown");
+    await new Promise<void>((resolve) => first.once("round:start", () => resolve()));
+    const active = await first.emitWithAck("room:sync", { requestId: "active" });
+    expect(active.state.phase).toBe("playing");
+    expect(active.roundResult).toBeNull();
+    expect(await first.emitWithAck("player:ready", { ready: false, requestId: "unready" })).toMatchObject({ ok: false, error: { code: "ROOM_STATE_CONFLICT" } });
+    const disconnected = new Promise<void>((resolve) => first.once("opponent:status", () => resolve()));
+    second.disconnect();
+    await disconnected;
+    const during = await first.emitWithAck("room:sync", { requestId: "during" });
+    expect(during.state.phase).toBe("playing");
+    expect(during.ownRound).toEqual(active.ownRound);
+    // Real time avoids advancing Socket.IO heartbeat clocks independently of network I/O.
+    await new Promise<void>((resolve) => first.once("round:result", () => resolve()));
+    const ended = await first.emitWithAck("room:sync", { requestId: "ended" });
+    expect(ended.state.phase).toBe("roundResults");
+    expect(ended.roundResult).toMatchObject({ players: [{ points: 0 }, { points: 0 }] });
+    expect(results).toEqual([ended.roundResult]);
+    expect(await first.emitWithAck("guess:submit", { round: 1, date: "2000-01-01", requestId: "late" })).toMatchObject({ ok: false, error: { code: "ROUND_EXPIRED" } });
+    const replacement = await connect(url);
+    await attach(replacement, guest);
+    const recovered = await replacement.emitWithAck("room:sync", { requestId: "recover" });
+    expect(recovered.roundResult).toEqual(ended.roundResult);
+    expect(recovered.ownRound).toMatchObject({ finished: true, guesses: [], roundEndsAt: active.ownRound.roundEndsAt });
+    expect(results).toHaveLength(1);
+  }, 75000);
+
   it("rejects malformed messages without changing readiness", async () => {
     const { url, host } = await setup();
     const client = await connect(url);
@@ -110,12 +210,18 @@ describe("socket lobby", () => {
     const second = await connect(url);
     await attach(first, host);
     await attach(second, guest);
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    const starts: unknown[] = [];
+    first.on("round:start", (event) => starts.push(event));
     await first.timeout(1000).emitWithAck("player:ready", { ready: true, requestId: "ready-1" });
     await second.timeout(1000).emitWithAck("player:ready", { ready: true, requestId: "ready-1" });
     await first.timeout(1000).emitWithAck("player:ready", { ready: false, requestId: "ready-2" });
     const synced = await second.timeout(1000).emitWithAck("room:sync", { requestId: "sync-1" });
     expect(synced.state).toMatchObject({ phase: "waiting", countdownStartsAt: null });
     expect(synced.state.players[0].ready).toBe(false);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect((await first.emitWithAck("room:sync", { requestId: "after-deadline" })).state.phase).toBe("waiting");
+    expect(starts).toEqual([]);
   });
 
   it("shuts down with connected clients without leaving open transports", async () => {
@@ -227,6 +333,9 @@ describe("socket lobby", () => {
     });
     expect(await client.timeout(1000).emitWithAck("room:sync", { requestId: "sync-1" })).toMatchObject({
       ok: false, requestId: "sync-1", error: { code: "PLAYER_NOT_ATTACHED" },
+    });
+    expect(await client.timeout(1000).emitWithAck("guess:submit", { round: 1, date: "2000-01-01", requestId: "guess-1" })).toMatchObject({
+      ok: false, error: { code: "PLAYER_NOT_ATTACHED" },
     });
     expect(await client.timeout(1000).emitWithAck("player:ready", { ready: true, requestId: "ready-1" })).toMatchObject({
       ok: false, requestId: "ready-1", error: { code: "PLAYER_NOT_ATTACHED" },

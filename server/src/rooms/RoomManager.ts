@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { MATCH_ROUNDS, ROOM_CAPACITY, type DuelErrorCode, type LobbyMetadata, type PlayerSession, type PlayerReadyAck, type RoomStateEvent } from "@guess-the-date/shared";
 
+import type { ActiveRound } from "./round.js";
+
 const LOBBY_IDLE_MS = 30 * 60_000;
 const MAX_ROOMS = 1000;
 
@@ -15,7 +17,8 @@ export interface RoomPlayer {
 
 export interface Room {
   code: string;
-  phase: "waiting" | "countdown";
+  phase: "waiting" | "countdown" | "playing" | "roundResults";
+  round?: ActiveRound;
   countdownStartsAt: number | null;
   expiresAt: number;
   players: RoomPlayer[];
@@ -102,12 +105,13 @@ export class RoomManager {
 
   snapshot(room: Room): RoomStateEvent {
     return {
-      code: room.code, phase: room.phase, round: null, roundsTotal: MATCH_ROUNDS,
+      code: room.code, phase: room.phase, round: room.round?.number ?? null, roundsTotal: MATCH_ROUNDS,
       countdownStartsAt: room.countdownStartsAt,
       players: room.players.map((player) => ({
         playerId: player.playerId, nickname: player.nickname,
         connected: player.socketId !== null, ready: player.ready,
-        finished: false, totalPoints: 0,
+        finished: room.round?.players.get(player.playerId)?.finished ?? false,
+        totalPoints: room.round?.result?.players.find((result) => result.playerId === player.playerId)?.totalPoints ?? 0,
       })),
     };
   }

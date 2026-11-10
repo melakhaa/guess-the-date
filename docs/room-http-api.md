@@ -11,7 +11,7 @@ npm run dev --workspace @guess-the-date/server
 
 Default address: `http://127.0.0.1:3001`. `PORT` accepts an integer from 1 to 65535; `HOST` overrides the bind address. `npm run start --workspace @guess-the-date/server` runs without watch mode. These commands use `tsx`, so install dev dependencies too. The frontend still runs separately via `npm run dev` and is not connected yet.
 
-This is a development server, not a production-ready deployment. Cross-origin frontend access, per-IP rate limits, active-match recovery, and deployment hardening remain pending. Do not expose it publicly yet.
+This is a development server, not a production-ready deployment. Cross-origin frontend access, per-IP rate limits, disconnect forfeiture, and deployment hardening remain pending. Do not expose it publicly yet.
 
 ## Endpoints
 
@@ -40,7 +40,7 @@ Public metadata deliberately excludes nicknames, player IDs, credentials, guesse
 
 Nicknames are Unicode NFKC-normalized, trimmed, and have whitespace runs collapsed. Normalized names must contain 1–24 Unicode code points. Markup delimiters (`<`, `>`), control characters, and format characters are rejected. Client UIs must still render names as text, not HTML.
 
-Create and join are **not idempotent**: a successful join consumes the second player slot. Do not automatically retry these POST requests after an ambiguous network failure; HTTP request-ID retry semantics are not implemented. Socket action retry handling belongs to later stages.
+Create and join are **not idempotent**: a successful join consumes the second player slot. Do not automatically retry these POST requests after an ambiguous network failure; HTTP request-ID retry semantics are not implemented. Socket action retry handling is documented in the socket API.
 
 ## Errors
 
@@ -64,6 +64,7 @@ Create and join are **not idempotent**: a successful join consumes the second pl
 ## Lifecycle and limitations
 
 - A lobby expires 30 minutes after creation or its latest successful join, socket attachment, or new readiness action. Metadata/sync reads, cached retries, and rejected actions do not extend expiry.
+- Metadata reports the current room phase, including `playing` and `roundResults`. Round start reserves expiry through at least 30 minutes after the round deadline; active play is never removed by the old lobby timeout.
 - Expired rooms are removed on access and swept before room creation. A periodic sweep will be added with match/timer cleanup in Stage 9.
 - Room state is process-local. Restarting the server loses every room and session.
 - Two concurrent guest joins cannot both claim the last slot: lookup, capacity check, and insertion are synchronous with no intervening await.

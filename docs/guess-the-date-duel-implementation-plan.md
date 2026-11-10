@@ -173,9 +173,15 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
   - [x] Remove client catalog/answer imports before multiplayer ships; buildable duel placeholder replaces the single-player entry point.
 - [x] Stage 3 — HTTP rooms and lobby state
 - [x] Stage 4 — Socket attachment, readiness, and countdown
-  - Countdown deadline is published and included in snapshots; executing the first round at that deadline is Stage 5 work.
-- [ ] Stage 5 — One authoritative playable round
+  - Countdown deadline is published and included in snapshots; Stage 5 executes it.
+- [x] Stage 5 — One authoritative playable round
+  - Server-owned countdown/deadline timers, private clues/feedback, bounded retries, early/timeout scoring, and result recovery on sync.
+  - Stops at round 1 results; Stage 6 must select five distinct event IDs, add eight-second intervals, accumulate totals, and implement final results/rematch.
+  - Real WebSocket clients cover early finish and a real 60-second timeout. Browser/polling/proxy flows remain unverified.
 - [ ] Stage 6 — Five-round match and results
 - [ ] Stage 7 — Duel home and lobby client
 - [ ] Stage 8 — Round, results, and final client
 - [ ] Stage 9 — Reliability, security, and release check
+  - Keep the current server single-process and non-public until origin allowlisting, connection/per-IP/guess limits, forfeits, and periodic cleanup are implemented.
+  - Catalog schema validation is complete, but historical accuracy, sources, clue ordering, and answer leakage still need manual review.
+  - Stage 7 needs a client Socket.IO dependency and a Vite proxy or coordinated CORS allowlist; Stage 8 should remove obsolete single-player helpers without importing the catalog.

@@ -42,7 +42,7 @@ export type JoinRoomResponse = PlayerSession;
 
 export interface LobbyMetadata {
   code: string;
-  phase: "waiting" | "countdown";
+  phase: RoomPhase;
   playerCount: number;
   capacity: number;
 }
@@ -129,6 +129,7 @@ export interface OwnRoundState {
 export type RoomSyncAck = ActionAck<{
   state: RoomStateEvent;
   ownRound: OwnRoundState | null;
+  roundResult: RoundResultEvent | null;
   serverNow: number;
 }>;
 
