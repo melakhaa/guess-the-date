@@ -1,6 +1,6 @@
 # Room HTTP API (Stage 3)
 
-The source of truth for DTO shapes is `shared/src/protocol.ts`; errors are defined in `shared/src/errors.ts`. Route behavior is covered by `server/src/routes/rooms.test.ts` using Fastify injection. There is no Socket.IO server yet.
+The source of truth for DTO shapes is `shared/src/protocol.ts`; errors are defined in `shared/src/errors.ts`. Route behavior is covered by `server/src/routes/rooms.test.ts` using Fastify injection. The [Socket.IO lobby API](socket-lobby-api.md) provides authenticated attachment, readiness, and countdown broadcasts on the same server.
 
 ## Run locally
 
@@ -11,7 +11,7 @@ npm run dev --workspace @guess-the-date/server
 
 Default address: `http://127.0.0.1:3001`. `PORT` accepts an integer from 1 to 65535; `HOST` overrides the bind address. `npm run start --workspace @guess-the-date/server` runs without watch mode. These commands use `tsx`, so install dev dependencies too. The frontend still runs separately via `npm run dev` and is not connected yet.
 
-This is a development server, not a production-ready deployment. Cross-origin frontend access, per-IP rate limits, Socket.IO authentication, and deployment hardening remain pending. Do not expose it publicly yet.
+This is a development server, not a production-ready deployment. Cross-origin frontend access, per-IP rate limits, active-match recovery, and deployment hardening remain pending. Do not expose it publicly yet.
 
 ## Endpoints
 
@@ -63,7 +63,7 @@ Create and join are **not idempotent**: a successful join consumes the second pl
 
 ## Lifecycle and limitations
 
-- A lobby expires 30 minutes after creation or its latest successful join. Metadata reads and rejected joins do not extend expiry.
+- A lobby expires 30 minutes after creation or its latest successful join, socket attachment, or new readiness action. Metadata/sync reads, cached retries, and rejected actions do not extend expiry.
 - Expired rooms are removed on access and swept before room creation. A periodic sweep will be added with match/timer cleanup in Stage 9.
 - Room state is process-local. Restarting the server loses every room and session.
 - Two concurrent guest joins cannot both claim the last slot: lookup, capacity check, and insertion are synchronous with no intervening await.

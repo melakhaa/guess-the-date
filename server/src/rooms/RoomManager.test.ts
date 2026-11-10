@@ -4,6 +4,16 @@ import { RoomManager } from "./RoomManager.js";
 afterEach(() => vi.useRealTimers());
 
 describe("room storage", () => {
+  it("rejects authentication at the lobby expiry boundary", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(0);
+    const rooms = new RoomManager();
+    const host = rooms.create("Host");
+    expect(rooms.authenticate(host.code, host.playerToken).player.playerId).toBe(host.playerId);
+    vi.setSystemTime(30 * 60_000);
+    expect(() => rooms.authenticate(host.code, host.playerToken)).toThrow("expired");
+  });
+
   it("normalizes nicknames and stores only token hashes", () => {
     const rooms = new RoomManager();
     const host = rooms.create("  Ａda   Lovelace  ");

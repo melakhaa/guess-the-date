@@ -32,4 +32,5 @@ export interface ApiErrorResponse {
 
 export type ActionAck<T extends object = Record<string, never>> =
   | ({ ok: true; requestId: string } & T)
-  | { ok: false; requestId: string; error: DuelError };
+  // Malformed requests may not contain a valid requestId to echo.
+  | { ok: false; requestId?: string; error: DuelError };

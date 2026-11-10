@@ -172,7 +172,8 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
   - [x] Server catalog schema, loader, and validation.
   - [x] Remove client catalog/answer imports before multiplayer ships; buildable duel placeholder replaces the single-player entry point.
 - [x] Stage 3 — HTTP rooms and lobby state
-- [ ] Stage 4 — Socket attachment, readiness, and countdown
+- [x] Stage 4 — Socket attachment, readiness, and countdown
+  - Countdown deadline is published and included in snapshots; executing the first round at that deadline is Stage 5 work.
 - [ ] Stage 5 — One authoritative playable round
 - [ ] Stage 6 — Five-round match and results
 - [ ] Stage 7 — Duel home and lobby client

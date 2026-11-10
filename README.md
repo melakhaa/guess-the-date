@@ -2,7 +2,7 @@
 
 Guess the exact date of a historical event using progressive clues and proximity feedback.
 
-**Guess the Date Duel is in development:** a two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts, server game rules, a validated server-only catalog, and the HTTP room API are implemented. The browser currently shows a duel placeholder; multiplayer gameplay and the connected UI are not yet runnable. The old single-player entry point has been retired to remove bundled answers.
+**Guess the Date Duel is in development:** a two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts, server game rules, a validated server-only catalog, the HTTP room API, and authenticated Socket.IO lobby/countdown flow are implemented. The browser currently shows a duel placeholder; multiplayer gameplay and the connected UI are not yet runnable. The old single-player entry point has been retired to remove bundled answers.
 
 ## Get started
 
@@ -19,7 +19,7 @@ Open the local URL printed by Vite. The development command starts the duel plac
 npm run dev --workspace @guess-the-date/server
 ```
 
-The server defaults to `http://127.0.0.1:3001`; `GET /health` reports readiness. See the [room HTTP API](docs/room-http-api.md) for requests, errors, and development limitations. The client is not connected to these routes yet.
+The server defaults to `http://127.0.0.1:3001`; `GET /health` reports readiness. See the [room HTTP API](docs/room-http-api.md) and [socket lobby API](docs/socket-lobby-api.md) for contracts and development limitations. The client is not connected yet, and countdown completion/round gameplay remains Stage 5 work.
 
 ## Checks
 
@@ -41,7 +41,7 @@ The production client build is written to `client/dist/`.
 | Path | Purpose |
 | --- | --- |
 | `client/` | React, TypeScript, and Vite browser app |
-| `server/src/routes/`, `server/src/rooms/` | HTTP room endpoints and in-memory lobby state |
+| `server/src/routes/`, `server/src/rooms/`, `server/src/socket/` | HTTP rooms, in-memory lobby state, and authenticated socket lobby flow |
 | `server/src/content/` | Validated server-only event catalog |
 | `server/src/game/` | Pure date validation, feedback, guess acceptance, clue progression, and round-scoring rules |
 | `shared/src/` | Shared TypeScript protocol types, constants, and error codes |

@@ -66,6 +66,7 @@ export interface RoomStateEvent {
   players: PublicPlayerState[];
   round: number | null;
   roundsTotal: number;
+  countdownStartsAt: number | null;
 }
 
 export interface RoomAttachRequest {
@@ -214,6 +215,25 @@ export interface ClientToServerPayloads {
   "room:sync": RoomSyncRequest;
   "player:rematch": PlayerRematchRequest;
 }
+
+export interface ClientToServerAcks {
+  "room:attach": RoomAttachAck;
+  "player:ready": PlayerReadyAck;
+  "guess:submit": GuessSubmitAck;
+  "room:sync": RoomSyncAck;
+  "player:rematch": PlayerRematchAck;
+}
+
+export type ClientToServerEvents = {
+  [Event in keyof ClientToServerPayloads]: (
+    payload: ClientToServerPayloads[Event],
+    ack: (response: ClientToServerAcks[Event]) => void,
+  ) => void;
+};
+
+export type ServerToClientEvents = {
+  [Event in keyof ServerToClientPayloads]: (payload: ServerToClientPayloads[Event]) => void;
+};
 
 export interface ServerToClientPayloads {
   "room:state": RoomStateEvent;

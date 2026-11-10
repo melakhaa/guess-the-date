@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import "./content/events.js";
 import { RoomError, RoomManager } from "./rooms/RoomManager.js";
 import { registerRoomRoutes } from "./routes/rooms.js";
+import { registerLobby } from "./socket/lobby.js";
 
 export function buildApp({ logger = false } = {}) {
   const app = Fastify({ bodyLimit: 1024, logger });
@@ -28,5 +29,6 @@ export function buildApp({ logger = false } = {}) {
   );
   app.get("/health", async () => ({ status: "ok" }));
   registerRoomRoutes(app, rooms);
+  registerLobby(app, rooms);
   return app;
 }

@@ -1,5 +1,5 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { ROOM_CAPACITY, type DuelErrorCode, type LobbyMetadata, type PlayerSession } from "@guess-the-date/shared";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { MATCH_ROUNDS, ROOM_CAPACITY, type DuelErrorCode, type LobbyMetadata, type PlayerSession, type PlayerReadyAck, type RoomStateEvent } from "@guess-the-date/shared";
 
 const LOBBY_IDLE_MS = 30 * 60_000;
 const MAX_ROOMS = 1000;
@@ -8,11 +8,15 @@ export interface RoomPlayer {
   playerId: string;
   nickname: string;
   tokenHash: string;
+  socketId: string | null;
+  ready: boolean;
+  readyAcks: Map<string, PlayerReadyAck>;
 }
 
 export interface Room {
   code: string;
-  phase: "waiting";
+  phase: "waiting" | "countdown";
+  countdownStartsAt: number | null;
   expiresAt: number;
   players: RoomPlayer[];
 }
@@ -39,7 +43,7 @@ export class RoomManager {
     do {
       code = randomBytes(12).toString("base64url");
     } while (this.rooms.has(code));
-    const room: Room = { code, phase: "waiting", expiresAt: Date.now() + LOBBY_IDLE_MS, players: [] };
+    const room: Room = { code, phase: "waiting", countdownStartsAt: null, expiresAt: Date.now() + LOBBY_IDLE_MS, players: [] };
     const session = this.addPlayer(room, nickname);
     this.rooms.set(code, room);
     return session;
@@ -64,8 +68,11 @@ export class RoomManager {
     }
     const playerToken = randomBytes(32).toString("base64url");
     const playerId = randomUUID();
-    room.players.push({ playerId, nickname, tokenHash: createHash("sha256").update(playerToken).digest("hex") });
-    room.expiresAt = Date.now() + LOBBY_IDLE_MS;
+    room.players.push({
+      playerId, nickname, tokenHash: createHash("sha256").update(playerToken).digest("hex"),
+      socketId: null, ready: false, readyAcks: new Map(),
+    });
+    this.touch(room);
     return { code: room.code, playerId, playerToken };
   }
 
@@ -77,6 +84,32 @@ export class RoomManager {
       throw new RoomError("ROOM_EXPIRED", 410, "This room has expired.");
     }
     return room;
+  }
+
+  touch(room: Room): void {
+    room.expiresAt = Date.now() + LOBBY_IDLE_MS;
+  }
+
+  authenticate(code: string, playerToken: string): { room: Room; player: RoomPlayer } {
+    const room = this.get(code);
+    const tokenHash = createHash("sha256").update(playerToken).digest();
+    const player = room.players.find((candidate) =>
+      timingSafeEqual(Buffer.from(candidate.tokenHash, "hex"), tokenHash),
+    );
+    if (!player) throw new RoomError("UNAUTHORIZED", 401, "Invalid player credential.");
+    return { room, player };
+  }
+
+  snapshot(room: Room): RoomStateEvent {
+    return {
+      code: room.code, phase: room.phase, round: null, roundsTotal: MATCH_ROUNDS,
+      countdownStartsAt: room.countdownStartsAt,
+      players: room.players.map((player) => ({
+        playerId: player.playerId, nickname: player.nickname,
+        connected: player.socketId !== null, ready: player.ready,
+        finished: false, totalPoints: 0,
+      })),
+    };
   }
 
   metadata(code: string): LobbyMetadata {
