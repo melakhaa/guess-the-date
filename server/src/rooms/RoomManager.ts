@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { MATCH_ROUNDS, ROOM_CAPACITY, type DuelErrorCode, type LobbyMetadata, type PlayerSession, type PlayerReadyAck, type RoomStateEvent } from "@guess-the-date/shared";
+import { MATCH_ROUNDS, ROOM_CAPACITY, type DuelErrorCode, type LobbyMetadata, type PlayerSession, type PlayerReadyAck, type RoomStateEvent, type RoundResultEvent, type MatchResultEvent } from "@guess-the-date/shared";
 
 import type { ActiveRound } from "./round.js";
 
@@ -13,12 +13,15 @@ export interface RoomPlayer {
   socketId: string | null;
   ready: boolean;
   readyAcks: Map<string, PlayerReadyAck>;
+  rematchSession?: PlayerSession;
 }
 
 export interface Room {
   code: string;
-  phase: "waiting" | "countdown" | "playing" | "roundResults";
+  phase: "waiting" | "countdown" | "playing" | "roundResults" | "matchResults";
   round?: ActiveRound;
+  results: RoundResultEvent[];
+  matchResult?: MatchResultEvent;
   countdownStartsAt: number | null;
   expiresAt: number;
   players: RoomPlayer[];
@@ -46,7 +49,7 @@ export class RoomManager {
     do {
       code = randomBytes(12).toString("base64url");
     } while (this.rooms.has(code));
-    const room: Room = { code, phase: "waiting", countdownStartsAt: null, expiresAt: Date.now() + LOBBY_IDLE_MS, players: [] };
+    const room: Room = { code, phase: "waiting", countdownStartsAt: null, results: [], expiresAt: Date.now() + LOBBY_IDLE_MS, players: [] };
     const session = this.addPlayer(room, nickname);
     this.rooms.set(code, room);
     return session;
@@ -58,6 +61,20 @@ export class RoomManager {
       throw new RoomError("ROOM_FULL", 409, "This room already has two players.");
     }
     return this.addPlayer(room, nickname);
+  }
+
+  rematch(code: string, playerId: string): PlayerSession {
+    const room = this.get(code);
+    const player = room.players.find((candidate) => candidate.playerId === playerId);
+    if (!player) throw new RoomError("UNAUTHORIZED", 401, "Player is not in this room.");
+    if (room.phase !== "matchResults") throw new RoomError("ROOM_STATE_CONFLICT", 409, "Finish the match before creating a rematch.");
+    if (player.rematchSession) {
+      this.get(player.rematchSession.code);
+      return player.rematchSession;
+    }
+    // Retain one private credential response per player so retries cannot create extra rooms.
+    player.rematchSession = this.create(player.nickname);
+    return player.rematchSession;
   }
 
   private addPlayer(room: Room, nickname: string): PlayerSession {
@@ -111,7 +128,7 @@ export class RoomManager {
         playerId: player.playerId, nickname: player.nickname,
         connected: player.socketId !== null, ready: player.ready,
         finished: room.round?.players.get(player.playerId)?.finished ?? false,
-        totalPoints: room.round?.result?.players.find((result) => result.playerId === player.playerId)?.totalPoints ?? 0,
+        totalPoints: room.results.at(-1)?.players.find((result) => result.playerId === player.playerId)?.totalPoints ?? 0,
       })),
     };
   }

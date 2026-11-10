@@ -30,7 +30,7 @@ Example session shape (placeholder values, not usable credentials):
 { "code": "abcdefghijklmnop", "playerId": "player-id", "playerToken": "private-session-token" }
 ```
 
-Codes are case-sensitive, 16-character base64url invitation identifiers generated from 12 random bytes. They are not authentication credentials. Player IDs are UUIDs; tokens are generated from 32 random bytes and returned only to the corresponding create/join caller. Only SHA-256 token hashes are kept in room state. Do not place tokens in URLs, share text, or logs.
+Codes are case-sensitive, 16-character base64url invitation identifiers generated from 12 random bytes. They are not authentication credentials. Player IDs are UUIDs; tokens are generated from 32 random bytes and returned only to the corresponding create/join caller. Player authentication records keep SHA-256 token hashes. The socket rematch retry cache also retains one private credential response per original player; see the socket API for its lifetime and retry behavior. Do not place tokens in URLs, share text, or logs.
 
 Public metadata deliberately excludes nicknames, player IDs, credentials, guesses, and events:
 
@@ -64,7 +64,7 @@ Create and join are **not idempotent**: a successful join consumes the second pl
 ## Lifecycle and limitations
 
 - A lobby expires 30 minutes after creation or its latest successful join, socket attachment, or new readiness action. Metadata/sync reads, cached retries, and rejected actions do not extend expiry.
-- Metadata reports the current room phase, including `playing` and `roundResults`. Round start reserves expiry through at least 30 minutes after the round deadline; active play is never removed by the old lobby timeout.
+- Metadata reports the current room phase, including `playing`, `roundResults`, and `matchResults`. Round start reserves expiry through at least 30 minutes after the round deadline; active play is never removed by the old lobby timeout.
 - Expired rooms are removed on access and swept before room creation. A periodic sweep will be added with match/timer cleanup in Stage 9.
 - Room state is process-local. Restarting the server loses every room and session.
 - Two concurrent guest joins cannot both claim the last slot: lookup, capacity check, and insertion are synchronous with no intervening await.

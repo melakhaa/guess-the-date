@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { io, type Socket } from "socket.io-client";
-import type { MatchCountdownEvent, PlayerSession, RoomAttachAck, RoomStateEvent } from "@guess-the-date/shared";
+import type { MatchCountdownEvent, MatchResultEvent, RoundResultEvent, RoundStartEvent, PlayerSession, RoomAttachAck, RoomStateEvent } from "@guess-the-date/shared";
 import { buildApp } from "../app.js";
 import { events } from "../content/events.js";
 
@@ -37,6 +37,100 @@ async function attach(client: Socket, session: PlayerSession): Promise<RoomAttac
 }
 
 describe("socket lobby", () => {
+  it("plays exactly five distinct rounds and broadcasts one recoverable final result", async () => {
+    const { app, url, host, guest } = await setup();
+    const other = (await app.inject({ method: "POST", url: "/api/rooms", payload: { nickname: "Other" } })).json<PlayerSession>();
+    const observer = await connect(url);
+    await attach(observer, other);
+    const unrelated: unknown[] = [];
+    for (const name of ["round:start", "round:result", "match:result", "opponent:status", "guess:result"]) observer.on(name, (event) => unrelated.push(event));
+    const first = await connect(url);
+    const second = await connect(url);
+    await attach(first, host);
+    await attach(second, guest);
+    expect(await first.timeout(1000).emitWithAck("player:rematch", { requestId: "early" })).toMatchObject({ ok: false, error: { code: "ROOM_STATE_CONFLICT" } });
+    const starts: RoundStartEvent[][] = [[], []];
+    const results: RoundResultEvent[][] = [[], []];
+    const finals: MatchResultEvent[][] = [[], []];
+    [first, second].forEach((client, index) => {
+      client.on("round:start", (event) => starts[index].push(event));
+      client.on("round:result", (event) => results[index].push(event));
+      client.on("match:result", (event) => finals[index].push(event));
+    });
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    await first.emitWithAck("player:ready", { ready: true, requestId: "ready" });
+    await second.emitWithAck("player:ready", { ready: true, requestId: "ready" });
+    const firstStart = new Promise<void>((resolve) => first.once("round:start", () => resolve()));
+    await vi.advanceTimersByTimeAsync(3000);
+    await firstStart;
+    for (let round = 1; round <= 5; round++) {
+      const synced = await first.emitWithAck("room:sync", { requestId: `start-${round}` });
+      expect(synced.state).toMatchObject({ phase: "playing", round });
+      expect(synced.matchResult).toBeNull();
+      expect(synced.ownRound.guesses).toEqual([]);
+      expect(synced.state.players.map((player: { totalPoints: number }) => player.totalPoints)).toEqual([(round - 1) * 5000, (round - 1) * 5000]);
+      const event = events.find((candidate) => candidate.clues[0] === synced.ownRound.clues[0])!;
+      if (round > 1) {
+        expect(await first.emitWithAck("guess:submit", { round: round - 1, date: event.date, requestId: "solve" })).toMatchObject({ ok: false, error: { code: "ROUND_MISMATCH" } });
+      }
+      for (const client of [first, second]) {
+        expect(await client.emitWithAck("guess:submit", { round, date: event.date, requestId: "solve" })).toMatchObject({ ok: true, guessesUsed: 1 });
+      }
+      const ended = await first.emitWithAck("room:sync", { requestId: `end-${round}` });
+      await second.emitWithAck("room:sync", { requestId: `end-${round}` });
+      expect(results[0]).toHaveLength(round);
+      expect(results[1]).toEqual(results[0]);
+      expect(starts[0]).toHaveLength(round);
+      expect(starts[1]).toEqual(starts[0]);
+      expect(ended.roundResult.players.map((player: { totalPoints: number }) => player.totalPoints)).toEqual([round * 5000, round * 5000]);
+      if (round < 5) {
+        expect(finals).toEqual([[], []]);
+        expect(ended.roundResult.nextRoundStartsAt).toBe(Date.now() + 8000);
+        await vi.advanceTimersByTimeAsync(7999);
+        expect((await first.emitWithAck("room:sync", { requestId: "before-next" })).state.phase).toBe("roundResults");
+        const nextStart = new Promise<void>((resolve) => first.once("round:start", () => resolve()));
+        await vi.advanceTimersByTimeAsync(1);
+        await nextStart;
+      } else {
+        expect(ended.state.phase).toBe("matchResults");
+        expect(ended.roundResult.nextRoundStartsAt).toBeNull();
+        expect(ended.matchResult).toEqual(finals[0][0]);
+      }
+    }
+    expect(new Set(results[0].map((result) => result.event.id)).size).toBe(5);
+    expect(finals[0]).toHaveLength(1);
+    expect(finals[1]).toEqual(finals[0]);
+    expect(finals[0][0]).toMatchObject({ winnerPlayerId: null, players: [{ totalPoints: 25000, exactSolves: 5, totalErrorDays: 0 }, { totalPoints: 25000, exactSolves: 5, totalErrorDays: 0 }] });
+    for (const result of results[0]) {
+      for (const secret of [result.event.id, result.event.date, result.event.title]) expect(finals[0][0].shareText).not.toContain(secret);
+    }
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(await first.emitWithAck("guess:submit", { round: 5, date: results[0][4].event.date, requestId: "solve" })).toMatchObject({ ok: true, guessesUsed: 1 });
+    const recovered = await first.emitWithAck("room:sync", { requestId: "final-sync" });
+    expect(recovered.matchResult).toEqual(finals[0][0]);
+    expect(starts[0]).toHaveLength(5);
+    expect(finals[0]).toHaveLength(1);
+    expect(await first.emitWithAck("player:rematch", { requestId: "bad", nickname: "Override" })).toMatchObject({ ok: false, error: { code: "INVALID_REQUEST" } });
+    const missingAck = new Promise((resolve) => first.once("room:error", resolve));
+    first.emit("player:rematch", { requestId: "no-ack" });
+    expect(await missingAck).toMatchObject({ code: "INVALID_REQUEST" });
+    const rematch = await first.emitWithAck("player:rematch", { requestId: "rematch" });
+    expect(rematch).toMatchObject({ ok: true, requestId: "rematch", code: expect.any(String), playerId: expect.any(String), playerToken: expect.any(String) });
+    expect(rematch.code).not.toBe(host.code);
+    expect(rematch.playerToken).not.toBe(host.playerToken);
+    expect(await first.emitWithAck("player:rematch", { requestId: "rematch" })).toEqual(rematch);
+    const returning = await connect(url);
+    await attach(returning, host);
+    expect(await returning.emitWithAck("player:rematch", { requestId: "retry-new-id" })).toEqual({ ...rematch, requestId: "retry-new-id" });
+    const publicState = await second.emitWithAck("room:sync", { requestId: "after-rematch" });
+    expect(publicState.state.phase).toBe("matchResults");
+    expect(JSON.stringify(publicState)).not.toContain(rematch.playerToken);
+    await observer.emitWithAck("room:sync", { requestId: "barrier" });
+    expect(unrelated).toEqual([]);
+    const next = await connect(url);
+    expect(await attach(next, rematch)).toMatchObject({ ok: true, state: { phase: "waiting", round: null, players: [{ nickname: "Host", ready: false, totalPoints: 0 }] } });
+  });
+
   it("starts a shared round and privately accepts guesses before revealing one result", async () => {
     const { url, host, guest } = await setup();
     const first = await connect(url);
@@ -335,6 +429,9 @@ describe("socket lobby", () => {
       ok: false, requestId: "sync-1", error: { code: "PLAYER_NOT_ATTACHED" },
     });
     expect(await client.timeout(1000).emitWithAck("guess:submit", { round: 1, date: "2000-01-01", requestId: "guess-1" })).toMatchObject({
+      ok: false, error: { code: "PLAYER_NOT_ATTACHED" },
+    });
+    expect(await client.timeout(1000).emitWithAck("player:rematch", { requestId: "rematch" })).toMatchObject({
       ok: false, error: { code: "PLAYER_NOT_ATTACHED" },
     });
     expect(await client.timeout(1000).emitWithAck("player:ready", { ready: true, requestId: "ready-1" })).toMatchObject({

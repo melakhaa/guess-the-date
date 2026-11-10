@@ -176,9 +176,12 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
   - Countdown deadline is published and included in snapshots; Stage 5 executes it.
 - [x] Stage 5 — One authoritative playable round
   - Server-owned countdown/deadline timers, private clues/feedback, bounded retries, early/timeout scoring, and result recovery on sync.
-  - Stops at round 1 results; Stage 6 must select five distinct event IDs, add eight-second intervals, accumulate totals, and implement final results/rematch.
+  - One-round lifecycle is extended to the full match in Stage 6.
   - Real WebSocket clients cover early finish and a real 60-second timeout. Browser/polling/proxy flows remain unverified.
-- [ ] Stage 6 — Five-round match and results
+- [x] Stage 6 — Five-round match and results
+  - Five distinct event IDs, eight-second intervals, cumulative scores, final winner/draw, and spoiler-free share text.
+  - Sync recovers round and final results; rematch creates one retry-safe fresh lobby per requester without moving sockets automatically.
+  - Controlled-clock real-client integration completes exactly five rounds with one result each and one final result. Pure score tests cover all tiebreaker priorities.
 - [ ] Stage 7 — Duel home and lobby client
 - [ ] Stage 8 — Round, results, and final client
 - [ ] Stage 9 — Reliability, security, and release check

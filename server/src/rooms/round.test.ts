@@ -54,7 +54,7 @@ describe("authoritative round state", () => {
         { playerId: host.playerId, nickname: "Host", bestGuess: event.date, errorDays: 0, points: 5000, totalPoints: 5000, solved: true },
         { playerId: room.players[1].playerId, nickname: "Guest", bestGuess: null, errorDays: null, points: 0, totalPoints: 0, solved: false },
       ],
-      nextRoundStartsAt: null,
+      nextRoundStartsAt: 69000,
     });
     expect(resolveRound(room, 61001)).toBeNull();
     expect(rooms.snapshot(room)).toMatchObject({ phase: "roundResults", players: [{ finished: true, totalPoints: 5000 }, { finished: true, totalPoints: 0 }] });
@@ -99,6 +99,49 @@ describe("authoritative round state", () => {
     }
     expect(resolveRound(room, 1003)).toMatchObject({ players: [{ bestGuess: "2000-01-06", errorDays: 4 }, { bestGuess: "2000-01-06", errorDays: 4 }] });
     expect(resolveRound(room, 61000)).toBeNull();
+  });
+
+  it("starts the next distinct event after eight seconds and preserves cumulative points", () => {
+    const { rooms, room } = countdownRoom();
+    startRound(room, event);
+    for (const player of room.players) {
+      acceptGuess(room, player.playerId, { round: 1, date: event.date, requestId: "solve" }, 1001);
+    }
+    expect(resolveRound(room, 1001)?.nextRoundStartsAt).toBe(9001);
+    const second = { ...event, id: "second-event" };
+    expect(() => startRound(room, second, 9000)).toThrow();
+    expect(() => startRound(room, event, 9001)).toThrow();
+    expect(startRound(room, second, 9001)).toMatchObject({ round: 2, roundStartedAt: 9001, roundEndsAt: 69001 });
+    expect(rooms.snapshot(room).players.map((player) => player.totalPoints)).toEqual([5000, 5000]);
+    for (const player of room.players) {
+      expect(acceptGuess(room, player.playerId, { round: 2, date: event.date, requestId: "solve" }, 9002)).toMatchObject({ ok: true, guessesUsed: 1 });
+    }
+    expect(resolveRound(room, 9002)?.players.map((player) => player.totalPoints)).toEqual([10000, 10000]);
+  });
+
+  it.each([false, true])("finishes exactly five rounds with a winner or draw (both solve: %s)", (bothSolve) => {
+    const { rooms, room } = countdownRoom();
+    let now = 1000;
+    for (let round = 1; round <= 5; round++) {
+      startRound(room, { ...event, id: `event-${round}` }, now);
+      acceptGuess(room, room.players[0].playerId, { round, date: event.date, requestId: "solve" }, now + 1);
+      if (bothSolve) acceptGuess(room, room.players[1].playerId, { round, date: event.date, requestId: "solve" }, now + 1);
+      const result = resolveRound(room, now + 60000)!;
+      expect(result.nextRoundStartsAt).toBe(round === 5 ? null : now + 68000);
+      expect(resolveRound(room, now + 60001)).toBeNull();
+      now += 68000;
+    }
+    expect(room.results).toHaveLength(5);
+    expect(rooms.snapshot(room).phase).toBe("matchResults");
+    expect(room.matchResult).toMatchObject({
+      winnerPlayerId: bothSolve ? null : room.players[0].playerId,
+      players: [
+        { totalPoints: 25000, exactSolves: 5, totalErrorDays: 0, rounds: Array.from({ length: 5 }, (_, index) => ({ round: index + 1, points: 5000, errorDays: 0, solved: true })) },
+        { totalPoints: bothSolve ? 25000 : 0, exactSolves: bothSolve ? 5 : 0, totalErrorDays: bothSolve ? 0 : 913105 },
+      ],
+    });
+    expect(room.matchResult?.shareText).toBe(`Guess the Date Duel — ${bothSolve ? "Draw" : "Player 1 wins"}\n5 rounds | 25000–${bothSolve ? 25000 : 0} points | 5–${bothSolve ? 5 : 0} exact solves`);
+    expect(() => startRound(room, { ...event, id: "sixth" }, now)).toThrow();
   });
 
   it("starts once with a 60-second deadline based on the scheduled start", () => {

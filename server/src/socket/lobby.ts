@@ -4,7 +4,7 @@ import { acceptGuess, ownRound, resolveRound, startRound } from "../rooms/round.
 import type { FastifyInstance } from "fastify";
 import { Server, type Socket } from "socket.io";
 import { z, ZodError } from "zod";
-import { ROOM_CAPACITY, ROUND_COUNTDOWN_MS, type ClientToServerEvents, type DuelError, type PlayerReadyAck, type ServerToClientEvents } from "@guess-the-date/shared";
+import { MATCH_ROUNDS, ROOM_CAPACITY, ROUND_COUNTDOWN_MS, type ClientToServerEvents, type DuelError, type PlayerReadyAck, type ServerToClientEvents } from "@guess-the-date/shared";
 import { RoomError, type Room, type RoomManager } from "../rooms/RoomManager.js";
 
 interface SocketData {
@@ -21,7 +21,7 @@ const attachSchema = z.strictObject({
 const requestIdEnvelope = z.object({ requestId: z.string().min(1).max(128) });
 const syncSchema = requestIdEnvelope.strict();
 const readySchema = syncSchema.extend({ ready: z.boolean() });
-const guessSchema = syncSchema.extend({ round: z.number().int().min(1).max(5), date: z.string().max(10) });
+const guessSchema = syncSchema.extend({ round: z.number().int().min(1).max(MATCH_ROUNDS), date: z.string().max(10) });
 const MAX_READY_ACKS = 64;
 
 function attachedPlayer(socket: LobbySocket, rooms: RoomManager) {
@@ -57,7 +57,9 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
 
   function schedule(room: Room): void {
     clearTimer(room);
-    const deadline = room.phase === "countdown" ? room.countdownStartsAt : room.phase === "playing" ? room.round?.endsAt : null;
+    const deadline = room.phase === "countdown" ? room.countdownStartsAt
+      : room.phase === "playing" ? room.round?.endsAt
+      : room.phase === "roundResults" ? room.round?.result?.nextRoundStartsAt : null;
     if (deadline == null) return;
     timers.set(room.code, setTimeout(() => {
       timers.delete(room.code);
@@ -73,16 +75,20 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
 
   function advance(room: Room): void {
     const now = Date.now();
-    if (room.phase === "countdown" && room.countdownStartsAt !== null && now >= room.countdownStartsAt) {
-      const started = startRound(room, events[randomInt(events.length)]);
+    const startsAt = room.phase === "countdown" ? room.countdownStartsAt
+      : room.phase === "roundResults" ? room.round?.result?.nextRoundStartsAt : null;
+    if (startsAt != null && now >= startsAt) {
+      const remaining = events.filter((event) => !room.results.some((result) => result.event.id === event.id));
+      const started = startRound(room, remaining[randomInt(remaining.length)], now);
       io.to(room.code).emit("round:start", { ...started, serverNow: now });
       io.to(room.code).emit("room:state", rooms.snapshot(room));
       schedule(room);
     }
     const result = resolveRound(room, now);
     if (result) {
-      clearTimer(room);
+      schedule(room);
       io.to(room.code).emit("round:result", result);
+      if (room.matchResult) io.to(room.code).emit("match:result", room.matchResult);
       io.to(room.code).emit("room:state", rooms.snapshot(room));
     }
   }
@@ -163,6 +169,19 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
       }
     });
 
+    socket.on("player:rematch", (payload, ack) => {
+      const requestId = requestIdEnvelope.safeParse(payload).data?.requestId;
+      try {
+        if (typeof ack !== "function") throw new RoomError("INVALID_REQUEST", 400, "Acknowledgment required.");
+        const request = syncSchema.parse(payload);
+        const { room, player } = attachedPlayer(socket, rooms);
+        advance(room);
+        ack({ ok: true, requestId: request.requestId, ...rooms.rematch(room.code, player.playerId) });
+      } catch (error) {
+        fail(socket, ack, error, requestId);
+      }
+    });
+
     socket.on("room:sync", (payload, ack) => {
       const requestId = requestIdEnvelope.safeParse(payload).data?.requestId;
       try {
@@ -170,7 +189,7 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
         const request = syncSchema.parse(payload);
         const { room, player } = attachedPlayer(socket, rooms);
         advance(room);
-        ack({ ok: true, requestId: request.requestId, state: rooms.snapshot(room), ownRound: ownRound(room, player.playerId), roundResult: room.round?.result ?? null, serverNow: Date.now() });
+        ack({ ok: true, requestId: request.requestId, state: rooms.snapshot(room), ownRound: ownRound(room, player.playerId), roundResult: room.round?.result ?? null, matchResult: room.matchResult ?? null, serverNow: Date.now() });
       } catch (error) {
         fail(socket, ack, error, requestId);
       }

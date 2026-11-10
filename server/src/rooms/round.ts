@@ -1,6 +1,6 @@
-import { MATCH_ROUNDS, ROUND_DURATION_MS, type GuessSubmitAck, type GuessSubmitRequest, type OwnRoundState, type RoundResultEvent, type RoundStartEvent } from "@guess-the-date/shared";
+import { MATCH_ROUNDS, ROUND_DURATION_MS, ROUND_RESULTS_DURATION_MS, type GuessSubmitAck, type GuessSubmitRequest, type OwnRoundState, type RoundResultEvent, type RoundStartEvent } from "@guess-the-date/shared";
 import type { HistoricalEvent } from "../content/events.js";
-import { createPlayerRound, scoreRound, submitGuess, type PlayerRoundState } from "../game/index.js";
+import { compareMatchScores, createPlayerRound, scoreRound, submitGuess, summarizeMatch, type PlayerRoundState } from "../game/index.js";
 import { RoomError, type Room } from "./RoomManager.js";
 
 export interface ActiveRound {
@@ -63,22 +63,42 @@ export function resolveRound(room: Room, now: number): RoundResultEvent | null {
       const state = round.players.get(player.playerId)!;
       const score = scoreRound(date, state.guesses.map((guess) => guess.date));
       round.players.set(player.playerId, { ...state, finished: true });
-      return { playerId: player.playerId, nickname: player.nickname, ...score, totalPoints: score.points };
+      const previousTotal = room.results.at(-1)?.players.find((result) => result.playerId === player.playerId)?.totalPoints ?? 0;
+      return { playerId: player.playerId, nickname: player.nickname, ...score, totalPoints: previousTotal + score.points };
     }),
-    // shortcut: Stage 5 stops after one round; Stage 6 schedules the next distinct event.
-    nextRoundStartsAt: null,
+    nextRoundStartsAt: round.number < MATCH_ROUNDS ? now + ROUND_RESULTS_DURATION_MS : null,
   };
+  room.results.push(round.result);
   room.phase = "roundResults";
+  if (room.results.length === MATCH_ROUNDS) {
+    const players = room.players.map(({ playerId, nickname }) => {
+      const rounds = room.results.map((result) => {
+        const { points, errorDays, solved } = result.players.find((player) => player.playerId === playerId)!;
+        return { round: result.round, points, errorDays, solved };
+      });
+      return { playerId, nickname, ...summarizeMatch(rounds), rounds };
+    });
+    const comparison = compareMatchScores(players[0], players[1]);
+    const winner = comparison > 0 ? 0 : comparison < 0 ? 1 : null;
+    room.matchResult = {
+      winnerPlayerId: winner === null ? null : players[winner].playerId,
+      players,
+      shareText: `Guess the Date Duel — ${winner === null ? "Draw" : `Player ${winner + 1} wins`}\n5 rounds | ${players[0].totalPoints}–${players[1].totalPoints} points | ${players[0].exactSolves}–${players[1].exactSolves} exact solves`,
+    };
+    room.phase = "matchResults";
+  }
   return round.result;
 }
 
-export function startRound(room: Room, event: HistoricalEvent): Omit<RoundStartEvent, "serverNow"> {
-  if (room.phase !== "countdown" || room.countdownStartsAt === null) {
-    throw new RoomError("ROOM_STATE_CONFLICT", 409, "Room is not counting down.");
+export function startRound(room: Room, event: HistoricalEvent, now = Date.now()): Omit<RoundStartEvent, "serverNow"> {
+  const startedAt = room.phase === "countdown" ? room.countdownStartsAt
+    : room.phase === "roundResults" ? room.round?.result?.nextRoundStartsAt : null;
+  if (startedAt == null || now < startedAt || room.results.length >= MATCH_ROUNDS || room.results.some((result) => result.event.id === event.id)) {
+    throw new RoomError("ROOM_STATE_CONFLICT", 409, "Round cannot start.");
   }
-  const startedAt = room.countdownStartsAt;
+  const number = room.results.length + 1;
   room.round = {
-    number: 1, event, startedAt, endsAt: startedAt + ROUND_DURATION_MS,
+    number, event, startedAt, endsAt: startedAt + ROUND_DURATION_MS,
     acks: new Map(room.players.map((player) => [player.playerId, new Map()])),
     players: new Map(room.players.map((player) => [player.playerId, createPlayerRound()])),
   };
@@ -86,7 +106,7 @@ export function startRound(room: Room, event: HistoricalEvent): Omit<RoundStartE
   room.countdownStartsAt = null;
   room.expiresAt = Math.max(room.expiresAt, room.round.endsAt + 30 * 60_000);
   return {
-    round: 1, roundsTotal: MATCH_ROUNDS, clue: event.clues[0],
+    round: number, roundsTotal: MATCH_ROUNDS, clue: event.clues[0],
     roundStartedAt: startedAt, roundEndsAt: room.round.endsAt,
   };
 }

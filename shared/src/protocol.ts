@@ -130,6 +130,7 @@ export type RoomSyncAck = ActionAck<{
   state: RoomStateEvent;
   ownRound: OwnRoundState | null;
   roundResult: RoundResultEvent | null;
+  matchResult: MatchResultEvent | null;
   serverNow: number;
 }>;
 

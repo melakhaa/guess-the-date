@@ -47,6 +47,31 @@ describe("room storage", () => {
     expect(() => rooms.metadata(host.code)).toThrow("expired");
   });
 
+  it("creates one private rematch lobby per player and does not recreate an expired retry", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(0);
+    const rooms = new RoomManager();
+    const host = rooms.create("Host");
+    const guest = rooms.join(host.code, "Guest");
+    const room = rooms.get(host.code);
+    expect(() => rooms.rematch(host.code, host.playerId)).toThrow("Finish the match");
+    room.phase = "matchResults";
+    expect(() => rooms.rematch(host.code, "forged")).toThrow("Player is not in this room");
+    const next = rooms.rematch(host.code, host.playerId);
+    expect(rooms.rematch(host.code, host.playerId)).toEqual(next);
+    const guestNext = rooms.rematch(host.code, guest.playerId);
+    expect(guestNext.code).not.toBe(next.code);
+    expect(rooms.metadata(next.code)).toMatchObject({ phase: "waiting", playerCount: 1 });
+    expect(rooms.authenticate(next.code, next.playerToken).player.nickname).toBe("Host");
+    expect(() => rooms.authenticate(next.code, host.playerToken)).toThrow("Invalid player credential");
+    expect(JSON.stringify(rooms.snapshot(room))).not.toContain(next.playerToken);
+    vi.setSystemTime(25 * 60_000);
+    rooms.touch(room);
+    vi.setSystemTime(30 * 60_000);
+    expect(() => rooms.rematch(host.code, host.playerId)).toThrow("expired");
+    expect(() => rooms.rematch(host.code, host.playerId)).toThrow("not found");
+  });
+
   it("bounds room storage and reclaims expired lobbies before creating another", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(0);

@@ -2,7 +2,7 @@
 
 Guess the exact date of a historical event using progressive clues and proximity feedback.
 
-**Guess the Date Duel is in development:** a two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts, server game rules, a validated server-only catalog, the HTTP room API, and authenticated Socket.IO lobby/countdown plus one authoritative round are implemented. The browser currently shows a duel placeholder; five-round progression and the connected UI are not yet runnable. The old single-player entry point has been retired to remove bundled answers.
+**Guess the Date Duel is in development:** a two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts, server game rules, a validated server-only catalog, the HTTP room API, and authenticated Socket.IO lobby/countdown plus five-round matches, final results, and rematch creation are implemented. The browser currently shows a duel placeholder; the connected UI is not yet runnable. The old single-player entry point has been retired to remove bundled answers.
 
 ## Get started
 
@@ -19,7 +19,7 @@ Open the local URL printed by Vite. The development command starts the duel plac
 npm run dev --workspace @guess-the-date/server
 ```
 
-The server defaults to `http://127.0.0.1:3001`; `GET /health` reports readiness. See the [room HTTP API](docs/room-http-api.md) and [socket lobby API](docs/socket-lobby-api.md) for contracts and development limitations. The client is not connected yet. Socket clients can play one round; five-round progression remains Stage 6 work.
+The server defaults to `http://127.0.0.1:3001`; `GET /health` reports readiness. See the [room HTTP API](docs/room-http-api.md) and [socket lobby API](docs/socket-lobby-api.md) for contracts and development limitations. The client is not connected yet. Socket clients can play five-round matches and create rematch lobbies; the connected browser flow remains Stages 7–8 work.
 
 ## Checks
 
