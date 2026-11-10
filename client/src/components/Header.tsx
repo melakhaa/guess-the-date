@@ -1,33 +1,8 @@
-import type { GameMode } from "../lib/game";
-
-const tabClass = (active: boolean) =>
-  `border-b-2 px-2 py-2 text-sm font-medium transition-colors ${
-    active ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
-  }`;
-
-export function Header({
-  mode,
-  onDaily,
-  onUnlimited,
-  onHelp,
-}: {
-  mode: GameMode;
-  onDaily: () => void;
-  onUnlimited: () => void;
-  onHelp: () => void;
-}) {
+export function Header({ onHelp }: { onHelp: () => void }) {
   return (
     <header className="border-b border-line">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-2">
-        <nav aria-label="Game modes" className="flex gap-2">
-          <button type="button" onClick={onDaily} aria-pressed={mode === "daily"} className={tabClass(mode === "daily")}>
-            Daily
-          </button>
-          <button type="button" onClick={onUnlimited} aria-pressed={mode === "unlimited"} className={tabClass(mode === "unlimited")}>
-            Unlimited
-          </button>
-        </nav>
-
+        <span className="text-sm font-medium">Guess the Date</span>
         <button
           type="button"
           onClick={onHelp}

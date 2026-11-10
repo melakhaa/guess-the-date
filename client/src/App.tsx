@@ -1,38 +1,25 @@
 import { useState } from "react";
-import { GameScreen } from "./components/GameScreen";
 import { Header } from "./components/Header";
 import { HelpDialog } from "./components/HelpDialog";
-import { useGame } from "./hooks/useGame";
 
 export default function App() {
-  const game = useGame();
   const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <div className="min-h-screen text-ink">
-      <Header mode={game.mode} onDaily={game.playDaily} onUnlimited={game.playUnlimited} onHelp={() => setHelpOpen(true)} />
-
-      {game.round && game.event ? (
-        <GameScreen
-          round={game.round}
-          event={game.event}
-          countdown={game.countdown}
-          onGuess={game.submitGuess}
-          onAnother={game.playAnother}
-        />
-      ) : (
-        <main className="mx-auto max-w-xl px-6 py-24 text-center">
-          <h1 className="text-xl font-bold">This mystery could not be loaded.</h1>
-          <button
-            type="button"
-            onClick={game.playDaily}
-            className="mt-6 h-11 rounded bg-accent px-4 font-semibold text-white hover:bg-accent-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            Play today's mystery
-          </button>
-        </main>
-      )}
-
+      <Header onHelp={() => setHelpOpen(true)} />
+      <main className="mx-auto max-w-2xl px-4 py-12">
+        <h1 className="text-2xl font-bold tracking-tight">Guess the Date Duel</h1>
+        <p className="mt-4 max-w-prose text-sm leading-6">
+          Challenge a friend to five rounds of historical mysteries. Follow the clues,
+          guess the date, and earn points for accuracy.
+        </p>
+        <p className="mt-6 text-sm font-medium">Multiplayer is in development.</p>
+        <p className="mt-2 max-w-prose text-sm leading-6 text-muted">
+          Creating and joining rooms is not available yet. Daily and unlimited puzzles
+          have been retired while we prepare the two-player game.
+        </p>
+      </main>
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );

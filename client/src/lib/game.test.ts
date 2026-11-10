@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import eventsData from "../data/events.json";
 import {
   DAILY_EVENT_IDS,
   evaluateGuess,
@@ -11,7 +10,15 @@ import {
   type HistoricalEvent,
 } from "./game";
 
-const events = eventsData as unknown as HistoricalEvent[];
+// Synthetic fixtures only: production event answers belong on the server.
+const events: HistoricalEvent[] = DAILY_EVENT_IDS.map((id) => ({
+  id,
+  title: "Test event",
+  date: "2000-02-29",
+  clues: ["First", "Second", "Third", "Fourth", "Fifth"],
+  explanation: "Synthetic test fixture",
+  sources: [{ label: "Example", url: "https://example.com" }],
+}));
 const event = events[0];
 const today = new Date("2025-11-05T12:00:00Z");
 
@@ -68,11 +75,6 @@ describe("round state", () => {
 });
 
 describe("puzzle selection", () => {
-  it("contains every fixed daily rotation event in the catalog", () => {
-    const ids = new Set(events.map((candidate) => candidate.id));
-    expect(DAILY_EVENT_IDS.every((id) => ids.has(id))).toBe(true);
-  });
-
   it("uses a stable UTC rotation", () => {
     expect(getDailyPuzzle(events, new Date("2025-01-01T23:59:59Z")).event.id).toBe(
       DAILY_EVENT_IDS[0],
