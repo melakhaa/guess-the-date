@@ -186,5 +186,20 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
 - [ ] Stage 8 — Round, results, and final client
 - [ ] Stage 9 — Reliability, security, and release check
   - Keep the current server single-process and non-public until origin allowlisting, connection/per-IP/guess limits, forfeits, and periodic cleanup are implemented.
-  - Catalog schema validation is complete, but historical accuracy, sources, clue ordering, and answer leakage still need manual review.
+  - Catalog schema validation is complete. See the [catalog review handoff](#catalog-review-handoff) for content fixes and remaining source verification.
   - Stage 7 needs a client Socket.IO dependency and a Vite proxy or coordinated CORS allowlist; Stage 8 should remove obsolete single-player helpers without importing the catalog.
+
+### Catalog review handoff
+
+Reviewed all 55 entries for clue progression and obvious date spoilers, and checked their cited links. No clue spells out its full answer date. A scan of the current production client JavaScript found no catalog IDs, titles, first clues, or answer dates. The following are content follow-ups, not blockers for Stage 7:
+
+| Entry | Follow-up for the catalog owner |
+|---|---|
+| `first-website` | Name the dated milestone precisely: Tim Berners-Lee's [public Usenet post about the Web](https://www.w3.org/People/Berners-Lee/1991/08/art-6484.txt), not necessarily the first day the site went online. Update title, explanation, clue 5, and source together. |
+| `penicillin-discovered` | Verify the exact day before shipping. The [historical review](https://pmc.ncbi.nlm.nih.gov/articles/PMC5403050/) supports 1928 but does not establish September 28. If a reliable day-specific source cannot be found, replace the event with a dateable milestone. |
+| `berlin-wall-opens`, `bandung-conference`, `ghana-independence` | Replace the Berlin citation, which redirects to an unrelated story about Latvia's president. Bandung redirects to the museum homepage, and Ghana cites a government homepage; use event-specific sources. For Ghana, remove the broad "first sub-Saharan African colony" claim unless the replacement source supports a narrower, qualified statement. |
+| `first-human-spaceflight` | Clue 1 already identifies the milestone, and clue 3 confuses automatic flight control with control from the ground. Open with a broader clue and use a sourced fact about Vostok's automatic controls later. |
+| `apollo-11-moon-landing`, `everest-first-ascent`, `curiosity-lands-on-mars` | Move the near-identifying hints later: the first crewed trip to another world (clue 1), the highest point on Earth (clue 1), and "seven minutes of terror" (clue 2). Keep the hints about the event distinct from hints about the exact date. |
+| `first-earth-day`, `baird-television-demonstration` | Tighten progression: put Earth Day's environmental-law hint before the senator's name, and Baird's moving-image hint before naming the Royal Institution. |
+
+**Still open:** A reachable page is not proof of an exact date. Complete a source-by-source date sign-off, starting with the citations that returned errors or timed out during this pass: Panama Canal, first Winter Olympics, Baird television, penicillin, first Oscars, UN founding, India independence, Universal Declaration, Everest, first barcode scan, first IVF birth, first SMS, Pluto reclassification, and first black hole image. Access failures from this environment do not establish that the links are broken. Recheck clue difficulty in the two-browser playtest after Stage 8.
