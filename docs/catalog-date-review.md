@@ -1,6 +1,15 @@
 # Duel catalog: exact-date review
 
+Reviewed the 55 entries in the [server catalog](../server/src/content/events.json) at revision `491b720`. **53 dates have supporting evidence:** 26 at the existing citation and 27 at a more specific or accessible citation below. Hold the other two entries before launch.
+
 This checks the stored day against the **named milestone**, not just a year, an article's publication date, or a successful HTTP response. It does not sign off every clue or imply that a citation inaccessible during review is broken for players.
+
+## Hold: the source does not establish the event as written
+
+| Entry | Finding and action |
+|---|---|
+| `first-website` | The [CERN history](https://home.cern/science/computing/the-birth-of-the-web/short-history-web/) places the first server in operation by the end of 1990. The [post dated 6 August 1991](https://www.w3.org/People/Berners-Lee/1991/08/art-6484.txt) describes the Web to `alt.hypertext`. Keep the day only if the title, clues and explanation ask about that announcement, not the day the first site went online. |
+| `penicillin-discovered` | The cited Nobel page dates the **prize**, not the observation. [Fleming's Nobel lecture](https://www.nobelprize.org/uploads/2018/06/fleming-lecture.pdf) and the [Science Museum account](https://www.sciencemuseum.org.uk/objects-and-stories/how-was-penicillin-developed) support 1928 but not 28 September. Supply day-specific historical evidence or replace the puzzle; don't change the answer to another estimated day. |
 
 ## Dates supported: citations for the catalog owner
 

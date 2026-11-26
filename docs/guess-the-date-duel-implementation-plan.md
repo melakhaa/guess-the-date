@@ -186,7 +186,7 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
 - [ ] Stage 8 — Round, results, and final client
 - [ ] Stage 9 — Reliability, security, and release check
   - Keep the current server single-process and non-public until origin allowlisting, connection/per-IP/guess limits, forfeits, and periodic cleanup are implemented.
-  - Catalog schema validation is complete. See the [catalog review handoff](#catalog-review-handoff) for content fixes and remaining source verification.
+  - Catalog schema validation and the [55-entry date review](catalog-date-review.md) are complete. Two milestones remain unsigned; see the [catalog review handoff](#catalog-review-handoff) before launch.
   - Stage 7 needs a client Socket.IO dependency and a Vite proxy or coordinated CORS allowlist; Stage 8 should remove obsolete single-player helpers without importing the catalog.
 
 ### Catalog review handoff
@@ -202,4 +202,4 @@ Reviewed all 55 entries for clue progression and obvious date spoilers, and chec
 | `apollo-11-moon-landing`, `everest-first-ascent`, `curiosity-lands-on-mars` | Move the near-identifying hints later: the first crewed trip to another world (clue 1), the highest point on Earth (clue 1), and "seven minutes of terror" (clue 2). Keep the hints about the event distinct from hints about the exact date. |
 | `first-earth-day`, `baird-television-demonstration` | Tighten progression: put Earth Day's environmental-law hint before the senator's name, and Baird's moving-image hint before naming the Royal Institution. |
 
-**Still open:** A reachable page is not proof of an exact date. Complete a source-by-source date sign-off, starting with the citations that returned errors or timed out during this pass: Panama Canal, first Winter Olympics, Baird television, penicillin, first Oscars, UN founding, India independence, Universal Declaration, Everest, first barcode scan, first IVF birth, first SMS, Pluto reclassification, and first black hole image. Access failures from this environment do not establish that the links are broken. Recheck clue difficulty in the two-browser playtest after Stage 8.
+**Before launch:** Apply the [date review's citation recommendations](catalog-date-review.md). Reframe `first-website` around the dated announcement and resolve or replace `penicillin-discovered`. The date review does not clear the clue issues above; recheck difficulty in the two-browser playtest after Stage 8.
