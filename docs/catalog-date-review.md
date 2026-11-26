@@ -2,6 +2,40 @@
 
 This checks the stored day against the **named milestone**, not just a year, an article's publication date, or a successful HTTP response. It does not sign off every clue or imply that a citation inaccessible during review is broken for players.
 
+## Dates supported: citations for the catalog owner
+
+These pages can be added or substituted without changing the stored date. Where the catalog links to an index, the link below goes directly to the evidence.
+
+| Entry | Source and what to check |
+|---|---|
+| `wright-first-flight` | [Wright Brothers National Memorial](https://www.nps.gov/wrbr/learn/historyculture/thefirstflight.htm): Orville's successful 17 December flight, not the earlier failed attempt. |
+| `panama-canal-opens` | [Panama Canal Authority, end of construction](https://pancanal.com/en/end-of-the-construction/): 15 August 1914 official opening and *Ancon* transit; the planned grand festivities were cancelled. |
+| `tutankhamun-tomb-discovered` | [Carter's first-season journal](https://www.griffith.ox.ac.uk/discoveringTut/journals-and-diaries/season-1/journal.html): stairway on 4 November, first sealed doorway on 5 November. The puzzle is about the first step. |
+| `first-winter-olympics` | [IOC Winter Games factsheet, p. 1 (archived PDF)](https://web.archive.org/web/20180323221203/https://stillmed.olympic.org/Documents/Reference_documents_Factsheets/The_Olympic_Winter_Games.pdf): the Chamonix Games ran **25 January–5 February 1924**. Use the start of the Games as the milestone; [Olympedia](https://www.olympedia.org/editions/29) lists a separate 24 January ceremony date. |
+| `first-academy-awards` | [HISTORY, first Academy Awards ceremony](https://www.history.com/this-day-in-history/may-16/first-academy-awards-ceremony): awards presented at the Roosevelt Hotel dinner on 16 May 1929. |
+| `salt-march-begins` | [HISTORY, start of the march](https://www.history.com/this-day-in-history/march-12/gandhi-leads-civil-disobedience) gives 12 March 1930. The [Gandhi Heritage Portal itinerary](https://www.gandhiheritageportal.org/dandi-march-details) distinguishes departure from breaking the salt law in April. |
+| `golden-gate-bridge-opens` | [Bridge district's opening calendar](https://www.goldengate.org/bridge/history-research/bridge-construction/opening-fiesta-week/): Pedestrian Day was 27 May 1937, before the opening to vehicles. |
+| `indonesia-independence-proclaimed` | [Rijksmuseum, Sukarno](https://www.rijksmuseum.nl/en/story/story-sukarno): account and photograph of Sukarno reading the proclamation in Jakarta on 17 August 1945. |
+| `united-nations-founded` | [UN Treaty Collection, Charter](https://treaties.un.org/pages/ViewDetails.aspx?src=TREATY&mtdsg_no=I-1&chapter=1&clang=_en): entry into force on 24 October 1945, distinct from signature in June. |
+| `eniac-unveiled` | [Penn Current on the dedication (archived)](https://web.archive.org/web/20140222152027/https://www.upenn.edu/pennnews/current/node/4171): 15 February 2011 was the dedication's 65th anniversary. The public announcement on 14 February 1946 is **not** the answer. |
+| `india-independence` | [Indian Independence Act 1947, §1 as enacted](https://www.legislation.gov.uk/ukpga/Geo6/10-11/30/section/1/enacted): names 15 August 1947 as the appointed day. |
+| `universal-declaration-human-rights` | [UNESCO, Human Rights Day](https://www.unesco.org/en/days/human-rights): explicitly ties 10 December to the General Assembly's adoption in 1948. |
+| `cern-founded` | [CERN Council, Convention](https://council.web.cern.ch/en/content/convention-establishment-european-organization-nuclear-research/): entry into force on 29 September 1954, not signature in 1953. |
+| `bandung-conference` | [Sukarno's opening speech, Fordham sourcebook](https://sourcebooks.fordham.edu/mod/1955sukarno-bandong.asp): dated 18 April 1955, distinct from the closing communiqué. |
+| `ghana-independence` | [US Office of the Historian](https://history.state.gov/countries/ghana): the independence proclamation and US recognition both occurred on 6 March 1957. This does not substantiate a continent-wide “first” claim. |
+| `first-human-spaceflight` | [ESA, flight of Vostok 1](https://www.esa.int/articles/about-us/who-we-are/history/the-flight-of-vostok-1): dated flight log for 12 April 1961. The re-entry section also describes automatic orientation aboard the spacecraft. |
+| `beatles-ed-sullivan` | [HISTORY, US broadcast](https://www.history.com/this-day-in-history/february-9/america-meets-the-beatles-on-the-ed-sullivan-show): the live performance on 9 February 1964, not the band's arrival in the US. |
+| `apollo-11-moon-landing` | [NASA mission overview](https://www.nasa.gov/missions/apollo/apollo-11/apollo-11-mission-overview/): the 20 July sequence follows *Eagle* through descent and touchdown; the first step was hours later. |
+| `first-barcode-scan` | [IBM, the UPC](https://www.ibm.com/history/upc): dates the Juicy Fruit transaction at Marsh's supermarket to 26 June 1974. |
+| `smallpox-eradicated` | [WHO, commemorating eradication](https://www.who.int/news/item/08-05-2020-commemorating-smallpox-eradication-a-legacy-of-hope-for-covid-19-and-other-diseases): the World Health Assembly declared eradication on 8 May 1980, not the day of the last infection. |
+| `macintosh-introduced` | [Computer History Museum, 24 January](https://www.computerhistory.org/tdih/january/24/): the 1984 entry dates the original Macintosh release, not the Super Bowl ad. |
+| `berlin-wall-opens` | [Chronik der Mauer, 23:30 entry](https://www.chronik-der-mauer.de/chronik/181825/9-november-1989): records the end of controls at Bornholmer Straße on 9 November 1989. The catalog URL redirects to an unrelated story. |
+| `deep-blue-defeats-kasparov` | [Computer History Museum, 11 May](https://www.computerhistory.org/tdih/may/11/): the 1997 entry describes the sixth and deciding game, not Deep Blue's earlier single-game victory. |
+| `iss-first-module` | [NASA station assembly elements](https://www.nasa.gov/international-space-station/international-space-station-assembly-elements/): Zarya is listed as the first component, launched 20 November 1998. |
+| `paris-agreement-adopted` | [UN Treaty Collection, Paris Agreement](https://treaties.un.org/pages/ViewDetails.aspx?src=TREATY&mtdsg_no=XXVII-7-d&chapter=27&clang=_en): the note dates adoption to 12 December 2015; entry into force was in 2016. |
+| `first-black-hole-image` | [ESO/EHT announcement](https://www.eso.org/public/news/eso1907/): the 10 April 2019 release announces the unveiling **that day**, not the date the observations were made. |
+| `chandrayaan-3-moon-landing` | [ISRO mission updates](https://www.isro.gov.in/Chandrayaan3.html): 23 August 2023 confirms the successful soft landing; earlier entries only predict it. |
+
 ## Dates supported by the existing catalog citation
 
 | Entry | Dated evidence on the cited page |
