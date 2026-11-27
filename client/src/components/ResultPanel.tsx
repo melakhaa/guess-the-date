@@ -1,83 +1,64 @@
-import { useState } from "react";
-import { MAX_GUESSES, formatLongDate, shareText, type HistoricalEvent, type RoundState } from "../lib/game";
+import { ROUND_RESULTS_DURATION_MS, type RoundResultEvent } from "@guess-the-date/shared";
+import { useSecondsLeft } from "../hooks/useSecondsLeft";
+import { formatLongDate, formatNumericDate } from "../lib/game";
 
-export function ResultPanel({
-  round,
-  event,
-  countdown,
-  onAnother,
-}: {
-  round: RoundState;
-  event: HistoricalEvent;
-  countdown: string;
-  onAnother: () => void;
+function NextRoundTimer({ startsAt, clockOffset }: { startsAt: number; clockOffset: number }) {
+  const seconds = useSecondsLeft(startsAt, clockOffset, ROUND_RESULTS_DURATION_MS);
+  return (
+    <p className="mt-1 text-xs font-medium text-muted" role="timer" aria-label="Next round countdown">
+      {seconds > 0 ? <>Next round in <strong className="tabular-nums text-ink">{seconds}s</strong></> : "Starting next round…"}
+    </p>
+  );
+}
+
+export function ResultPanel({ result, playerId, clockOffset }: {
+  result: RoundResultEvent;
+  playerId: string;
+  clockOffset: number;
 }) {
-  const [shareStatus, setShareStatus] = useState("");
-  const won = round.status === "won";
-
-  const share = async () => {
-    const text = `${shareText(round)}\n${window.location.origin}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ text, title: "Guess the Date result" });
-        setShareStatus("Result shared.");
-      } else {
-        await navigator.clipboard.writeText(text);
-        setShareStatus("Result copied to your clipboard.");
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      setShareStatus("Sharing is unavailable in this browser.");
-    }
-  };
+  const { event, players, nextRoundStartsAt } = result;
 
   return (
-    <section aria-live="polite">
-      <p className="text-xs font-medium text-muted">
-        {won ? `Solved in ${round.guesses.length}/${MAX_GUESSES}` : "Out of guesses"}
-      </p>
-      <h2 className="mt-3 text-2xl font-bold tracking-tight">{event.title}</h2>
-      <p className="mt-1 text-base font-semibold text-accent">{formatLongDate(event.date)}</p>
-      <p className="mt-3 text-sm leading-6">{event.explanation}</p>
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-        {event.sources.map((source) => (
-          <a
-            key={source.url}
-            href={source.url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-muted underline underline-offset-4 hover:text-ink"
-          >
-            {source.label}
-          </a>
-        ))}
-      </div>
-      {round.mode === "daily" ? (
-        <p className="mt-6 text-xs text-muted">
-          Next daily mystery in <span className="font-semibold tabular-nums text-ink">{countdown}</span>
+    <>
+      {nextRoundStartsAt !== null && <NextRoundTimer startsAt={nextRoundStartsAt} clockOffset={clockOffset} />}
+      <section className="mt-5" aria-labelledby="revealed-event">
+        <h2 id="revealed-event" className="text-xl font-bold tracking-tight">{event.title}</h2>
+        <p className="mt-1 text-base font-semibold text-ink">
+          <time dateTime={event.date}>{formatLongDate(event.date)}</time>
         </p>
-      ) : null}
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={share}
-          className="h-12 rounded-md bg-accent text-base font-semibold text-white transition-colors hover:bg-accent-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          Share result
-        </button>
-        {round.mode === "unlimited" ? (
-          <button
-            type="button"
-            onClick={onAnother}
-            className="h-12 rounded-md border border-ink text-base font-semibold transition-colors hover:bg-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            Play another
-          </button>
-        ) : null}
-      </div>
-      <p className="mt-2 min-h-4 text-xs text-muted" role="status">
-        {shareStatus}
-      </p>
-    </section>
+        <p className="mt-3 text-sm leading-6">{event.explanation}</p>
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          {event.sources.map((source) => (
+            <li key={source.url}>
+              <a href={source.url} target="_blank" rel="noreferrer" className="text-muted underline underline-offset-4 hover:text-ink">
+                {source.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <ul className="mt-5 border-b border-line" aria-label="Player results">
+        {players.map((player) => (
+          <li key={player.playerId} className="border-t border-line py-3">
+            <p className="wrap-anywhere text-sm font-semibold">{player.nickname}{player.playerId === playerId && " (you)"}</p>
+            <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-4">
+              <div>
+                <dt className="text-muted">Best guess</dt>
+                <dd>
+                  {player.bestGuess ? (
+                    <time className={player.solved ? "font-semibold text-accent" : undefined} dateTime={player.bestGuess}>
+                      {formatNumericDate(player.bestGuess)}
+                    </time>
+                  ) : "No guess"}
+                </dd>
+              </div>
+              <div><dt className="text-muted">Day error</dt><dd>{player.errorDays?.toLocaleString("en-GB") ?? "—"}</dd></div>
+              <div><dt className="text-muted">Round points</dt><dd>{player.points.toLocaleString("en-GB")}</dd></div>
+              <div><dt className="text-muted">Match total</dt><dd>{player.totalPoints.toLocaleString("en-GB")}</dd></div>
+            </dl>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

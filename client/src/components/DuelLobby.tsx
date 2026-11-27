@@ -4,6 +4,7 @@ import { useLobby } from "../hooks/useLobby";
 import { useSecondsLeft } from "../hooks/useSecondsLeft";
 import { inviteUrl } from "../lib/rooms";
 import { GameScreen } from "./GameScreen";
+import { ResultPanel } from "./ResultPanel";
 
 function Countdown({ startsAt, clockOffset }: { startsAt: number; clockOffset: number }) {
   const seconds = useSecondsLeft(startsAt, clockOffset, ROUND_COUNTDOWN_MS);
@@ -16,7 +17,7 @@ function Countdown({ startsAt, clockOffset }: { startsAt: number; clockOffset: n
 }
 
 export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeave: () => void }) {
-  const { room, ownRound, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect } = useLobby(session);
+  const { room, ownRound, roundResult, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect } = useLobby(session);
   const heading = useRef<HTMLHeadingElement>(null);
   const inviteInput = useRef<HTMLInputElement>(null);
   const [copyStatus, setCopyStatus] = useState("");
@@ -26,7 +27,11 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
   const inLobby = room?.phase === "waiting" || room?.phase === "countdown";
   const showLobby = !room || inLobby || room.phase === "cancelled";
   const game = room?.phase === "playing" && ownRound?.round === room.round ? ownRound : null;
-  const title = game ? `Round ${game.round} of ${room?.roundsTotal}` : showLobby ? "Duel lobby" : "Match progress";
+  const reveal = (room?.phase === "roundResults" || room?.phase === "matchResults") && roundResult?.round === room.round
+    ? roundResult : null;
+  const title = game ? `Round ${game.round} of ${room?.roundsTotal}`
+    : reveal ? `Round ${reveal.round} results`
+    : showLobby ? "Duel lobby" : "Match progress";
   const connected = connection === "connected";
   const startsAt = connected ? room?.countdownStartsAt : null;
 
@@ -50,7 +55,7 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
     : startsAt != null ? "Match countdown started."
     : room.phase === "cancelled" ? "This match was cancelled."
     : room.phase === "matchResults" ? "Match complete."
-    : room.phase === "roundResults" ? "Round complete. Waiting for the next round…"
+    : room.phase === "roundResults" ? (reveal ? null : "Loading round results…")
     : room.phase === "playing" ? (game ? null : "Preparing the round…")
     : room.players.length < ROOM_CAPACITY ? "Waiting for a friend to join."
     : room.players.some((player) => !player.connected) ? "Waiting for your friend to reconnect."
@@ -93,6 +98,7 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
       )}
       {status && <p role="status" className="mt-4 text-sm text-muted">{status}</p>}
       {game && <GameScreen key={game.round} round={game} opponent={opponent} clockOffset={clockOffset} connected={connected} onGuess={submitGuess} />}
+      {reveal && <ResultPanel key={reveal.round} result={reveal} playerId={session.playerId} clockOffset={clockOffset} />}
       {startsAt != null && <Countdown key={startsAt} startsAt={startsAt} clockOffset={clockOffset} />}
       {error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
       <div className="mt-5 flex flex-wrap gap-3">

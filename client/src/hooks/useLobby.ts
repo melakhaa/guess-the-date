@@ -1,6 +1,6 @@
 import type {
   ClientToServerEvents, DuelError, DuelErrorCode, GuessSubmitAck, GuessSubmitRequest, OwnRoundState,
-  PlayerSession, RoomStateEvent, ServerToClientEvents,
+  PlayerSession, RoomStateEvent, RoundResultEvent, ServerToClientEvents,
 } from "@guess-the-date/shared";
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
@@ -27,6 +27,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
   const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting" | "disconnected" | "unavailable">("connecting");
   const [room, setRoom] = useState<RoomStateEvent | null>(null);
   const [ownRound, setOwnRound] = useState<OwnRoundState | null>(null);
+  const [roundResult, setRoundResult] = useState<RoundResultEvent | null>(null);
   const [clockOffset, setClockOffset] = useState(0);
   const [readyPending, setReadyPending] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +58,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
         setClockOffset(sync.serverNow - (sentAt + performance.now()) / 2);
         setRoom(sync.state);
         setOwnRound(sync.ownRound);
+        setRoundResult(sync.roundResult);
         if (initial) {
           setError("");
           setConnection("connected");
@@ -69,8 +71,10 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
 
     socket.on("room:state", setRoom);
     socket.on("round:start", ({ round, clue, roundStartedAt, roundEndsAt }) => {
+      setRoundResult(null);
       setOwnRound({ round, clues: [clue], guesses: [], finished: false, roundStartedAt, roundEndsAt });
     });
+    socket.on("round:result", setRoundResult);
     socket.on("opponent:status", (status) => {
       setRoom((room) => room && ({
         ...room,
@@ -177,5 +181,5 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
     setAttempt((value) => value + 1);
   }
 
-  return { room, ownRound, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect };
+  return { room, ownRound, roundResult, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect };
 }
