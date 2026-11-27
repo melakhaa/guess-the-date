@@ -24,3 +24,19 @@ export function parseDateParts(
 
   return { ok: true, iso: date.toISOString().slice(0, 10) };
 }
+
+export function formatNumericDate(iso: string): string {
+  const [year, month, day] = iso.split("-");
+  return `${day} / ${month} / ${year}`;
+}
+
+const longDate = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+export function formatLongDate(iso: string): string {
+  return longDate.format(new Date(`${iso}T00:00:00Z`));
+}

@@ -1,6 +1,6 @@
 import { ROUND_RESULTS_DURATION_MS, type RoundResultEvent } from "@guess-the-date/shared";
 import { useSecondsLeft } from "../hooks/useSecondsLeft";
-import { formatLongDate, formatNumericDate } from "../lib/game";
+import { formatLongDate, formatNumericDate } from "../lib/duel-date";
 
 function NextRoundTimer({ startsAt, clockOffset }: { startsAt: number; clockOffset: number }) {
   const seconds = useSecondsLeft(startsAt, clockOffset, ROUND_RESULTS_DURATION_MS);

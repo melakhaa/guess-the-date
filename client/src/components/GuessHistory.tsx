@@ -1,5 +1,14 @@
 import type { OwnGuessFeedback, Temperature } from "@guess-the-date/shared";
-import { formatNumericDate, temperatureLabels } from "../lib/game";
+import { formatNumericDate } from "../lib/duel-date";
+
+const temperatureLabels: Record<Temperature, string> = {
+  correct: "Correct",
+  burning: "Burning",
+  hot: "Hot",
+  warm: "Warm",
+  cool: "Cool",
+  freezing: "Freezing",
+};
 
 const temperatureDots: Record<Temperature, string> = {
   correct: "bg-accent",

@@ -1,19 +1,16 @@
 # Guess the Date
 
-Guess the Date is a browser-based daily puzzle in which players use progressive clues and proximity feedback to guess the exact date of a historical event.
+Guess the Date Duel is a browser game in which two players use clues and proximity feedback to guess historical dates over five timed rounds.
 
 ## Project structure
 
 - `client/` — React/Vite browser app.
-- `client/src/App.tsx` — app shell: header, game screen, and help dialog.
-- `client/src/components/` — presentational components (`GameScreen`, `DateForm`, `GuessHistory`, `ResultPanel`, `Header`, `HelpDialog`).
-- `client/src/hooks/useGame.ts` — game state, persistence, and mode switching.
-- `client/src/lib/game.ts` — date parsing, puzzle selection, and game rules.
-- `client/src/lib/events.ts` — typed access to the event catalog.
-- `client/src/lib/storage.ts` — versioned localStorage keys and helpers.
-- `client/src/lib/game.test.ts` — game-rule tests.
-- `client/src/data/events.json` — sourced historical-event catalog.
-- `server/` — Node.js backend workspace.
+- `client/src/App.tsx` — app shell and browser room session.
+- `client/src/components/` — home, lobby, round and results screens.
+- `client/src/hooks/useLobby.ts` — Socket.IO connection, match state and actions.
+- `client/src/lib/duel-date.ts` — date input validation and formatting.
+- `client/src/lib/rooms.ts` — room HTTP calls, invites and session storage.
+- `server/` — Node.js backend workspace, game rules, and server-only event catalog.
 - `shared/` — shared TypeScript workspace.
 - `docs/` — product documentation and conventions.
 
