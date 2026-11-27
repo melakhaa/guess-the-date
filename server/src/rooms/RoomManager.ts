@@ -35,13 +35,22 @@ export class RoomError extends Error {
 
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
+  onExpire?: (code: string) => void;
 
-  create(nickname: string): PlayerSession {
-    // shortcut: reclaim on access/create only; add periodic cleanup with match timers in Stage 9.
+  private expire(code: string): void {
+    this.rooms.delete(code);
+    this.onExpire?.(code);
+  }
+
+  sweepExpired(): void {
     const now = Date.now();
     for (const [code, room] of this.rooms) {
-      if (now >= room.expiresAt) this.rooms.delete(code);
+      if (now >= room.expiresAt) this.expire(code);
     }
+  }
+
+  create(nickname: string): PlayerSession {
+    this.sweepExpired();
     if (this.rooms.size >= MAX_ROOMS) {
       throw new RoomError("RATE_LIMITED", 429, "Server room capacity reached. Try again later.");
     }
@@ -100,7 +109,7 @@ export class RoomManager {
     const room = this.rooms.get(code);
     if (!room) throw new RoomError("ROOM_NOT_FOUND", 404, "Room not found.");
     if (Date.now() >= room.expiresAt) {
-      this.rooms.delete(code);
+      this.expire(code);
       throw new RoomError("ROOM_EXPIRED", 410, "This room has expired.");
     }
     return room;

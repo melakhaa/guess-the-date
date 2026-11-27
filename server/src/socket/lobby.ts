@@ -50,13 +50,20 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
 
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  function clearTimer(room: Room): void {
-    clearTimeout(timers.get(room.code));
-    timers.delete(room.code);
+  function clearTimer(code: string): void {
+    clearTimeout(timers.get(code));
+    timers.delete(code);
   }
 
+  rooms.onExpire = (code) => {
+    clearTimer(code);
+    io.in(code).socketsLeave(code);
+  };
+  const sweep = setInterval(() => rooms.sweepExpired(), 60_000);
+  sweep.unref();
+
   function schedule(room: Room): void {
-    clearTimer(room);
+    clearTimer(room.code);
     const deadline = room.phase === "countdown" ? room.countdownStartsAt
       : room.phase === "playing" ? room.round?.endsAt
       : room.phase === "roundResults" ? room.round?.result?.nextRoundStartsAt : null;
@@ -104,7 +111,7 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
         if (room.phase === "waiting" || room.phase === "countdown") {
           room.phase = "waiting";
           room.countdownStartsAt = null;
-          clearTimer(room);
+          clearTimer(room.code);
         }
         socket.to(room.code).emit("opponent:status", { connected: false, finished: room.round?.players.get(player.playerId)?.finished ?? false });
         io.to(room.code).emit("room:state", rooms.snapshot(room));
@@ -129,7 +136,7 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
         if (!player.ready && room.phase === "countdown") {
           room.phase = "waiting";
           room.countdownStartsAt = null;
-          clearTimer(room);
+          clearTimer(room.code);
         }
         let countdown = null;
         if (room.phase === "waiting" && room.players.length === ROOM_CAPACITY && room.players.every((candidate) => candidate.ready && candidate.socketId !== null)) {
@@ -225,6 +232,7 @@ export function registerLobby(app: FastifyInstance, rooms: RoomManager): void {
   });
 
   app.addHook("preClose", async () => {
+    clearInterval(sweep);
     io.disconnectSockets(true);
     for (const timer of timers.values()) clearTimeout(timer);
     timers.clear();

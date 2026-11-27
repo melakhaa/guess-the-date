@@ -37,6 +37,40 @@ async function attach(client: Socket, session: PlayerSession): Promise<RoomAttac
 }
 
 describe("socket lobby", () => {
+  it("sweeps expired rooms without another room request and stops sweeping on close", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
+    const { app, host } = await setup();
+    await vi.advanceTimersByTimeAsync(29 * 60_000);
+    const fresh = (await app.inject({ method: "POST", url: "/api/rooms", payload: { nickname: "Fresh" } })).json<PlayerSession>();
+    await vi.advanceTimersByTimeAsync(60_000);
+    const expired = await app.inject(`/api/rooms/${host.code}`);
+    expect(expired.statusCode).toBe(404);
+    expect(expired.json()).toMatchObject({ error: { code: "ROOM_NOT_FOUND" } });
+    expect((await app.inject(`/api/rooms/${fresh.code}`)).statusCode).toBe(200);
+    await app.close();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("cancels a pending countdown timer when a lookup discovers room expiry", async () => {
+    const { app, url, host, guest } = await setup();
+    const first = await connect(url);
+    const second = await connect(url);
+    await attach(first, host);
+    await attach(second, guest);
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    const baseline = vi.getTimerCount();
+    await first.emitWithAck("player:ready", { requestId: "ready", ready: true });
+    await second.emitWithAck("player:ready", { requestId: "ready", ready: true });
+    expect(vi.getTimerCount()).toBe(baseline + 1);
+
+    // Move wall time to expiry without running the pending countdown callback.
+    vi.setSystemTime(Date.now() + 30 * 60_000);
+    const expired = await app.inject(`/api/rooms/${host.code}`);
+    expect(expired.statusCode).toBe(410);
+    expect(expired.json()).toMatchObject({ error: { code: "ROOM_EXPIRED" } });
+    expect(vi.getTimerCount()).toBe(baseline);
+  });
+
   it("plays exactly five distinct rounds and broadcasts one recoverable final result", async () => {
     const { app, url, host, guest } = await setup();
     const other = (await app.inject({ method: "POST", url: "/api/rooms", payload: { nickname: "Other" } })).json<PlayerSession>();
