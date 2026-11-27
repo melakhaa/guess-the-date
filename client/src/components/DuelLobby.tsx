@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLobby } from "../hooks/useLobby";
 import { useSecondsLeft } from "../hooks/useSecondsLeft";
 import { inviteUrl } from "../lib/rooms";
+import { CopyResult } from "./CopyResult";
 import { GameScreen } from "./GameScreen";
 import { MatchResults } from "./MatchResults";
 import { ResultPanel } from "./ResultPanel";
@@ -115,7 +116,8 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
       ))}
       {startsAt != null && <Countdown key={startsAt} startsAt={startsAt} clockOffset={clockOffset} />}
       {error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="mt-5 flex flex-wrap items-start gap-3">
+        {final && <CopyResult text={final.shareText} />}
         {inLobby && you && connection !== "disconnected" && connection !== "unavailable" && (
           <button type="button" className="duel-primary" disabled={!connected || readyPending} onClick={() => void setReady(!you.ready)}>
             {you.ready ? "Cancel ready" : "I'm ready"}
