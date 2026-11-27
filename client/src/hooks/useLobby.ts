@@ -1,5 +1,5 @@
 import type {
-  ClientToServerEvents, DuelError, DuelErrorCode, GuessSubmitAck, GuessSubmitRequest, OwnRoundState,
+  ClientToServerEvents, DuelError, DuelErrorCode, GuessSubmitAck, GuessSubmitRequest, MatchResultEvent, OwnRoundState,
   PlayerSession, RoomStateEvent, RoundResultEvent, ServerToClientEvents,
 } from "@guess-the-date/shared";
 import { useEffect, useRef, useState } from "react";
@@ -28,6 +28,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
   const [room, setRoom] = useState<RoomStateEvent | null>(null);
   const [ownRound, setOwnRound] = useState<OwnRoundState | null>(null);
   const [roundResult, setRoundResult] = useState<RoundResultEvent | null>(null);
+  const [matchResult, setMatchResult] = useState<MatchResultEvent | null>(null);
   const [clockOffset, setClockOffset] = useState(0);
   const [readyPending, setReadyPending] = useState(false);
   const [error, setError] = useState("");
@@ -59,6 +60,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
         setRoom(sync.state);
         setOwnRound(sync.ownRound);
         setRoundResult(sync.roundResult);
+        setMatchResult(sync.matchResult);
         if (initial) {
           setError("");
           setConnection("connected");
@@ -75,6 +77,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
       setOwnRound({ round, clues: [clue], guesses: [], finished: false, roundStartedAt, roundEndsAt });
     });
     socket.on("round:result", setRoundResult);
+    socket.on("match:result", setMatchResult);
     socket.on("opponent:status", (status) => {
       setRoom((room) => room && ({
         ...room,
@@ -181,5 +184,5 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
     setAttempt((value) => value + 1);
   }
 
-  return { room, ownRound, roundResult, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect };
+  return { room, ownRound, roundResult, matchResult, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect };
 }
