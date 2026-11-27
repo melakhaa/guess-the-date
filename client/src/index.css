@@ -12,6 +12,26 @@
   --color-error: #b3261e;
 }
 
+@layer components {
+  .duel-input {
+    @apply mt-1 block h-11 w-full rounded-md border border-field bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink;
+    cursor: text;
+  }
+
+  .duel-primary,
+  .duel-secondary {
+    @apply min-h-11 rounded-md px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-70;
+  }
+
+  .duel-primary {
+    @apply bg-accent text-base font-semibold text-white enabled:hover:bg-accent-dark;
+  }
+
+  .duel-secondary {
+    @apply border border-field text-sm font-medium enabled:hover:bg-wash;
+  }
+}
+
 :root {
   color: var(--color-ink);
   background: #ffffff;
