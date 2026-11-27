@@ -1,16 +1,20 @@
-import { ROUND_DURATION_MS, type OwnRoundState, type PublicPlayerState } from "@guess-the-date/shared";
+import { MAX_GUESSES, ROUND_DURATION_MS, type OwnRoundState, type PublicPlayerState } from "@guess-the-date/shared";
 import { useSecondsLeft } from "../hooks/useSecondsLeft";
+import { DateForm } from "./DateForm";
+import { GuessHistory } from "./GuessHistory";
 
 export function GameScreen({
   round,
   opponent,
   clockOffset,
   connected,
+  onGuess,
 }: {
   round: OwnRoundState;
   opponent?: PublicPlayerState;
   clockOffset: number;
   connected: boolean;
+  onGuess: (iso: string) => Promise<string | null>;
 }) {
   const seconds = useSecondsLeft(round.roundEndsAt, clockOffset, ROUND_DURATION_MS);
 
@@ -42,6 +46,19 @@ export function GameScreen({
           );
         })}
       </ol>
+
+      <div className="mt-6">
+        {round.finished || seconds === 0 ? (
+          <p role="status" className="text-sm font-medium">
+            {round.guesses.at(-1)?.direction === "exact" ? "Exact date!" : round.finished ? "No guesses left." : "Time’s up."}
+            {" Waiting for round results…"}
+          </p>
+        ) : (
+          <DateForm guessesLeft={MAX_GUESSES - round.guesses.length} disabled={!connected} onGuess={onGuess} />
+        )}
+      </div>
+
+      <GuessHistory guesses={round.guesses} />
     </>
   );
 }

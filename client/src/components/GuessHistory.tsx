@@ -1,4 +1,5 @@
-import { formatNumericDate, temperatureLabels, type EvaluatedGuess, type Temperature } from "../lib/game";
+import type { OwnGuessFeedback, Temperature } from "@guess-the-date/shared";
+import { formatNumericDate, temperatureLabels } from "../lib/game";
 
 const temperatureDots: Record<Temperature, string> = {
   correct: "bg-accent",
@@ -9,9 +10,9 @@ const temperatureDots: Record<Temperature, string> = {
   freezing: "bg-muted",
 };
 
-function Feedback({ guess }: { guess: EvaluatedGuess }) {
+function Feedback({ guess }: { guess: OwnGuessFeedback }) {
   const direction =
-    guess.direction === "correct" ? "Exact date" : guess.direction === "later" ? "Later" : "Earlier";
+    guess.direction === "exact" ? "Exact date" : guess.direction === "later" ? "Later" : "Earlier";
 
   return (
     <span className="inline-grid grid-cols-[0.5rem_8.5ch_10ch] items-center gap-x-2 text-xs text-muted">
@@ -22,14 +23,14 @@ function Feedback({ guess }: { guess: EvaluatedGuess }) {
   );
 }
 
-export function GuessHistory({ guesses }: { guesses: EvaluatedGuess[] }) {
+export function GuessHistory({ guesses }: { guesses: OwnGuessFeedback[] }) {
   return (
     <section className="mt-8" aria-labelledby="guess-history-title">
       <h2 id="guess-history-title" className="text-sm font-semibold">
         Guess history
       </h2>
-      {guesses.length ? (
-        <ol className="mt-2 overflow-hidden rounded-md border border-line">
+      <div aria-live="polite" aria-relevant="additions">
+        <ol className="mt-2 overflow-hidden rounded-md border border-line" hidden={guesses.length === 0}>
           {guesses.map((guess, index) => (
             <li
               key={guess.date}
@@ -43,11 +44,8 @@ export function GuessHistory({ guesses }: { guesses: EvaluatedGuess[] }) {
             </li>
           ))}
         </ol>
-      ) : (
-        <p className="mt-2 rounded-md border border-dashed border-line px-3 py-5 text-center text-sm text-muted">
-          Your guesses will appear here.
-        </p>
-      )}
+      </div>
+      {guesses.length === 0 && <p className="mt-2 text-sm text-muted">Your guesses will appear here.</p>}
     </section>
   );
 }

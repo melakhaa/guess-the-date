@@ -1,5 +1,5 @@
 import type {
-  ClientToServerEvents, DuelError, OwnRoundState,
+  ClientToServerEvents, DuelError, DuelErrorCode, GuessSubmitAck, GuessSubmitRequest, OwnRoundState,
   PlayerSession, RoomStateEvent, ServerToClientEvents,
 } from "@guess-the-date/shared";
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +8,12 @@ import { io, type Socket } from "socket.io-client";
 type LobbySocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 const ACK_TIMEOUT = 5000;
 const CLOCK_SYNC_MS = 15_000;
+const guessErrors: Partial<Record<DuelErrorCode, string>> = {
+  INVALID_DATE: "That date isn’t in the supported range.",
+  DUPLICATE_GUESS: "You’ve already tried that date.",
+  ALREADY_FINISHED: "You’ve already finished this round.",
+  GUESS_LIMIT_REACHED: "You’re out of guesses for this round.",
+};
 
 function roomUnavailable({ code }: DuelError): boolean {
   return code === "ROOM_EXPIRED" || code === "ROOM_NOT_FOUND" || code === "UNAUTHORIZED";
@@ -16,6 +22,7 @@ function roomUnavailable({ code }: DuelError): boolean {
 export function useLobby({ code, playerId, playerToken }: PlayerSession) {
   const socketRef = useRef<LobbySocket | null>(null);
   const nextId = useRef(0);
+  const retryGuess = useRef<GuessSubmitRequest | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting" | "disconnected" | "unavailable">("connecting");
   const [room, setRoom] = useState<RoomStateEvent | null>(null);
@@ -121,11 +128,54 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
     }
   }
 
+  async function submitGuess(date: string): Promise<string | null> {
+    const socket = socketRef.current;
+    if (!socket?.connected || connection !== "connected") return "Reconnect before guessing.";
+    if (!ownRound || room?.phase !== "playing" || ownRound.round !== room.round || ownRound.finished) {
+      return "This round has ended.";
+    }
+
+    const connectionId = socket.id;
+    const previous = retryGuess.current?.round === ownRound.round ? retryGuess.current : null;
+    if (previous && previous.date !== date && !ownRound.guesses.some((guess) => guess.date === previous.date)) {
+      return `Retry the unconfirmed date (${previous.date}) before entering a new one.`;
+    }
+    const request = previous?.date === date
+      ? previous
+      : { round: ownRound.round, date, requestId: `${connectionId}:${++nextId.current}` };
+    retryGuess.current = request;
+
+    try {
+      const ack: GuessSubmitAck = await socket.timeout(ACK_TIMEOUT).emitWithAck("guess:submit", request);
+      if (socketRef.current !== socket || socket.id !== connectionId) return "Connection changed. Check your guess history.";
+      retryGuess.current = null;
+      if (!ack.ok) {
+        if (roomUnavailable(ack.error)) {
+          socket.disconnect();
+          setConnection("unavailable");
+        }
+        return guessErrors[ack.error.code] ?? ack.error.message;
+      }
+      const { temperature, direction, finished, newClue } = ack;
+      setOwnRound((round) => {
+        if (round?.round !== request.round || round.guesses.some((guess) => guess.date === date)) return round;
+        return {
+          ...round, finished,
+          guesses: [...round.guesses, { date, temperature, direction }],
+          clues: newClue === undefined ? round.clues : [...round.clues, newClue],
+        };
+      });
+      return null;
+    } catch {
+      return "Could not confirm your guess. Retry the same date or check your history.";
+    }
+  }
+
   function reconnect() {
     setError("");
     setConnection("connecting");
     setAttempt((value) => value + 1);
   }
 
-  return { room, ownRound, clockOffset, connection, readyPending, error, setReady, reconnect };
+  return { room, ownRound, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect };
 }

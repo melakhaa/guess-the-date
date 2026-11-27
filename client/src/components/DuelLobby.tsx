@@ -16,7 +16,7 @@ function Countdown({ startsAt, clockOffset }: { startsAt: number; clockOffset: n
 }
 
 export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeave: () => void }) {
-  const { room, ownRound, clockOffset, connection, readyPending, error, setReady, reconnect } = useLobby(session);
+  const { room, ownRound, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect } = useLobby(session);
   const heading = useRef<HTMLHeadingElement>(null);
   const inviteInput = useRef<HTMLInputElement>(null);
   const [copyStatus, setCopyStatus] = useState("");
@@ -92,7 +92,7 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
         </>
       )}
       {status && <p role="status" className="mt-4 text-sm text-muted">{status}</p>}
-      {game && <GameScreen key={game.round} round={game} opponent={opponent} clockOffset={clockOffset} connected={connected} />}
+      {game && <GameScreen key={game.round} round={game} opponent={opponent} clockOffset={clockOffset} connected={connected} onGuess={submitGuess} />}
       {startsAt != null && <Countdown key={startsAt} startsAt={startsAt} clockOffset={clockOffset} />}
       {error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
       <div className="mt-5 flex flex-wrap gap-3">
