@@ -1,8 +1,6 @@
 # Guess the Date
 
-Guess the exact date of a historical event using progressive clues and proximity feedback.
-
-**Guess the Date Duel is in development:** a two-player, five-round mode with synchronized timers and server-authoritative scoring. Shared contracts, server game rules, a validated server-only catalog, the HTTP room API, and authenticated Socket.IO lobby/countdown plus five-round matches, final results, and rematch creation are implemented. The browser currently shows a duel placeholder; the connected UI is not yet runnable. The old single-player entry point has been retired to remove bundled answers.
+Challenge a friend to **Guess the Date Duel**. Use progressive clues and feedback to guess the dates of five historical events before each round ends.
 
 ## Get started
 
@@ -10,16 +8,12 @@ Use Node.js 22.12+ and npm. Run these commands from the repository root:
 
 ```sh
 npm ci
-npm run dev
-```
-
-Open the local URL printed by Vite. The development command starts the duel placeholder client only. In a second terminal, start the HTTP server:
-
-```sh
 npm run dev --workspace @guess-the-date/server
 ```
 
-The server defaults to `http://127.0.0.1:3001`; `GET /health` reports readiness. See the [room HTTP API](docs/room-http-api.md) and [socket lobby API](docs/socket-lobby-api.md) for contracts and development limitations. The client is not connected yet. Socket clients can play five-round matches and create rematch lobbies; the connected browser flow remains Stages 7–8 work.
+In a second terminal, run `npm run dev` to start Vite. Open the URL it prints, create a room, and open the invite link in a separate browser profile or private window. Both players mark ready to start.
+
+Vite proxies room requests and Socket.IO to `http://127.0.0.1:3001` by default. See the [room HTTP API](docs/room-http-api.md) and [socket lobby API](docs/socket-lobby-api.md) for details. Keep the server local until Stage 9 hardening is complete.
 
 ## Checks
 
