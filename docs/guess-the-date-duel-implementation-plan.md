@@ -177,17 +177,17 @@ Use these ownership boundaries to keep work parallel and merge conflicts small.
 - [x] Stage 5 — One authoritative playable round
   - Server-owned countdown/deadline timers, private clues/feedback, bounded retries, early/timeout scoring, and result recovery on sync.
   - One-round lifecycle is extended to the full match in Stage 6.
-  - Real WebSocket clients cover early finish and a real 60-second timeout. Browser/polling/proxy flows remain unverified.
+  - Real WebSocket clients cover early finish and a real 60-second timeout. Full browser gameplay and deployed proxy flows remain unverified.
 - [x] Stage 6 — Five-round match and results
   - Five distinct event IDs, eight-second intervals, cumulative scores, final winner/draw, and spoiler-free share text.
   - Sync recovers round and final results; rematch creates one retry-safe fresh lobby per requester without moving sockets automatically.
   - Controlled-clock real-client integration completes exactly five rounds with one result each and one final result. Pure score tests cover all tiebreaker priorities.
-- [ ] Stage 7 — Duel home and lobby client
+- [x] Stage 7 — Duel home and lobby client
+  - One Chrome session created a room and another joined via a code-only invite. Both saw the same countdown and reached match start through the local Vite proxy.
 - [ ] Stage 8 — Round, results, and final client
 - [ ] Stage 9 — Reliability, security, and release check
   - Keep the current server single-process and non-public until origin allowlisting, connection/per-IP/guess limits, forfeits, and periodic cleanup are implemented.
   - Catalog schema validation and the [55-entry date review](catalog-date-review.md) are complete. Two milestones remain unsigned; see the [catalog review handoff](#catalog-review-handoff) before launch.
-  - Stage 7 needs a client Socket.IO dependency and a Vite proxy or coordinated CORS allowlist; Stage 8 should remove obsolete single-player helpers without importing the catalog.
 
 ### Catalog review handoff
 

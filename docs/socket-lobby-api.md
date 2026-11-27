@@ -75,6 +75,6 @@ To make credential retries possible, the original room retains one private remat
 
 ## Stage boundary and remaining work
 
-Stages 4–6 provide the server match flow. The browser remains a disconnected placeholder; Stages 7–8 must connect it and implement round/final/rematch presentation.
+Stages 4–6 provide the server match flow. Stage 7 connects the browser through the local Vite proxy; two isolated Chrome sessions have reached match start via an invite. Stage 8 still owns round, results, and rematch presentation.
 
-Stage 9 still owns disconnect forfeiture, periodic cleanup, connection/per-IP/guess rate limits, and production origin allowlisting. Neither the HTTP server nor these sockets are ready for public deployment yet. Tests use real local WebSocket clients, including a controlled-clock five-round match and one real 60-second timeout test; polling, browser flows, and deployed proxies remain unverified.
+Stage 9 still owns disconnect forfeiture, periodic cleanup, connection/per-IP/guess rate limits, and production origin allowlisting. Neither the HTTP server nor these sockets are ready for public deployment yet. Tests use real local WebSocket clients, including a controlled-clock five-round match and one real 60-second timeout test; polling-only connections, full browser gameplay, and deployed proxies remain unverified.
