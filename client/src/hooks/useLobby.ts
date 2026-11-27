@@ -1,6 +1,6 @@
 import type {
   ClientToServerEvents, DuelError, DuelErrorCode, GuessSubmitAck, GuessSubmitRequest, MatchResultEvent, OwnRoundState,
-  PlayerSession, RoomStateEvent, RoundResultEvent, ServerToClientEvents,
+  PlayerRematchAck, PlayerSession, RoomStateEvent, RoundResultEvent, ServerToClientEvents,
 } from "@guess-the-date/shared";
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
@@ -31,6 +31,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
   const [matchResult, setMatchResult] = useState<MatchResultEvent | null>(null);
   const [clockOffset, setClockOffset] = useState(0);
   const [readyPending, setReadyPending] = useState(false);
+  const [rematchPending, setRematchPending] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
       clearInterval(clockSync);
       setConnection(socket.active ? "reconnecting" : "disconnected");
       setReadyPending(false);
+      setRematchPending(false);
     });
 
     socket.on("connect", async () => {
@@ -178,11 +180,44 @@ export function useLobby({ code, playerId, playerToken }: PlayerSession) {
     }
   }
 
+  async function createRematch(): Promise<PlayerSession | null> {
+    const socket = socketRef.current;
+    if (!socket?.connected || connection !== "connected" || room?.phase !== "matchResults" || rematchPending) {
+      return null;
+    }
+
+    const connectionId = socket.id;
+    const current = () => socketRef.current === socket && socket.id === connectionId;
+    setRematchPending(true);
+    setError("");
+    try {
+      const ack: PlayerRematchAck = await socket.timeout(ACK_TIMEOUT).emitWithAck("player:rematch", {
+        requestId: `${connectionId}:${++nextId.current}`,
+      });
+      if (!current()) return null;
+      if (!ack.ok) {
+        setError(ack.error.code === "ROOM_EXPIRED" || ack.error.code === "ROOM_NOT_FOUND"
+          ? "The rematch is no longer available. Return home to create a new room."
+          : ack.error.message);
+        return null;
+      }
+      return { code: ack.code, playerId: ack.playerId, playerToken: ack.playerToken };
+    } catch {
+      if (current()) setError("Could not confirm the rematch. Try again to recover the invite.");
+      return null;
+    } finally {
+      if (current()) setRematchPending(false);
+    }
+  }
+
   function reconnect() {
     setError("");
     setConnection("connecting");
     setAttempt((value) => value + 1);
   }
 
-  return { room, ownRound, roundResult, matchResult, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect };
+  return {
+    room, ownRound, roundResult, matchResult, clockOffset, connection, readyPending, rematchPending, error,
+    setReady, submitGuess, createRematch, reconnect,
+  };
 }

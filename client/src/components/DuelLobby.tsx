@@ -18,8 +18,15 @@ function Countdown({ startsAt, clockOffset }: { startsAt: number; clockOffset: n
   );
 }
 
-export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeave: () => void }) {
-  const { room, ownRound, roundResult, matchResult, clockOffset, connection, readyPending, error, setReady, submitGuess, reconnect } = useLobby(session);
+export function DuelLobby({ session, onLeave, onRematch }: {
+  session: PlayerSession;
+  onLeave: () => void;
+  onRematch: (session: PlayerSession) => void;
+}) {
+  const {
+    room, ownRound, roundResult, matchResult, clockOffset, connection, readyPending, rematchPending, error,
+    setReady, submitGuess, createRematch, reconnect,
+  } = useLobby(session);
   const heading = useRef<HTMLHeadingElement>(null);
   const inviteInput = useRef<HTMLInputElement>(null);
   const [copyStatus, setCopyStatus] = useState("");
@@ -41,6 +48,11 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
   const startsAt = connected ? room?.countdownStartsAt : null;
 
   useEffect(() => { heading.current?.focus(); }, [title]);
+
+  async function rematch() {
+    const newSession = await createRematch();
+    if (newSession) onRematch(newSession);
+  }
 
   async function copyInvite() {
     try {
@@ -117,7 +129,14 @@ export function DuelLobby({ session, onLeave }: { session: PlayerSession; onLeav
       {startsAt != null && <Countdown key={startsAt} startsAt={startsAt} clockOffset={clockOffset} />}
       {error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
       <div className="mt-5 flex flex-wrap items-start gap-3">
-        {final && <CopyResult text={final.shareText} />}
+        {final && (
+          <>
+            <button type="button" className="duel-primary" onClick={rematch} disabled={!connected || rematchPending}>
+              {rematchPending ? "Creating rematch…" : "Create rematch"}
+            </button>
+            <CopyResult text={final.shareText} />
+          </>
+        )}
         {inLobby && you && connection !== "disconnected" && connection !== "unavailable" && (
           <button type="button" className="duel-primary" disabled={!connected || readyPending} onClick={() => void setReady(!you.ready)}>
             {you.ready ? "Cancel ready" : "I'm ready"}

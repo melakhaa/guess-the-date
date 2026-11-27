@@ -31,7 +31,9 @@ export default function App() {
     <div className="min-h-screen text-ink">
       <Header onHelp={() => setHelpOpen(true)} />
       <main className="mx-auto max-w-2xl px-4 py-12">
-        {session ? <DuelLobby session={session} onLeave={leave} /> : <DuelHome inviteCode={inviteCode} onEnter={enter} />}
+        {session
+          ? <DuelLobby key={session.code} session={session} onLeave={leave} onRematch={enter} />
+          : <DuelHome inviteCode={inviteCode} onEnter={enter} />}
       </main>
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
