@@ -1,24 +1,37 @@
 import { useState } from "react";
+import type { PlayerSession } from "@guess-the-date/shared";
+import { DuelHome } from "./components/DuelHome";
+import { DuelLobby } from "./components/DuelLobby";
+import { inviteUrl, readSession, saveSession } from "./lib/rooms";
 import { Header } from "./components/Header";
 import { HelpDialog } from "./components/HelpDialog";
 
 export default function App() {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [inviteCode, setInviteCode] = useState(() => typeof window === "undefined"
+    ? null : new URLSearchParams(window.location.search).get("code"));
+  const [session, setSession] = useState(() => typeof window === "undefined" ? null : readSession(inviteCode));
+
+  function enter(session: PlayerSession) {
+    saveSession(session);
+    window.history.replaceState(window.history.state, "", inviteUrl(window.location.origin, session.code));
+    setSession(session);
+  }
+
+  function leave() {
+    saveSession(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("code");
+    window.history.replaceState(window.history.state, "", url);
+    setInviteCode(null);
+    setSession(null);
+  }
 
   return (
     <div className="min-h-screen text-ink">
       <Header onHelp={() => setHelpOpen(true)} />
       <main className="mx-auto max-w-2xl px-4 py-12">
-        <h1 className="text-2xl font-bold tracking-tight">Guess the Date Duel</h1>
-        <p className="mt-4 max-w-prose text-sm leading-6">
-          Challenge a friend to five rounds of historical mysteries. Follow the clues,
-          guess the date, and earn points for accuracy.
-        </p>
-        <p className="mt-6 text-sm font-medium">Multiplayer is in development.</p>
-        <p className="mt-2 max-w-prose text-sm leading-6 text-muted">
-          Creating and joining rooms is not available yet. Daily and unlimited puzzles
-          have been retired while we prepare the two-player game.
-        </p>
+        {session ? <DuelLobby session={session} onLeave={leave} /> : <DuelHome inviteCode={inviteCode} onEnter={enter} />}
       </main>
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>

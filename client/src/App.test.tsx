@@ -2,11 +2,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
-describe("duel shell", () => {
-  it("explains that rooms are unavailable without offering single-player actions", () => {
+describe("duel home", () => {
+  it("offers named create and join controls without offering single-player actions", () => {
     const html = renderToStaticMarkup(<App />);
     expect(html).toContain("Guess the Date Duel");
-    expect(html).toContain("Creating and joining rooms is not available yet.");
+    expect(html).toContain('for="nickname"');
+    expect(html).toContain('for="room-code"');
+    expect(html).toContain("Create room");
+    expect(html).toContain("Join room");
     expect(html).not.toContain("Game modes");
     expect(html).not.toContain("Play today's mystery");
   });
