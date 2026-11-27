@@ -132,54 +132,6 @@ function isValidIsoDate(value: string): boolean {
   );
 }
 
-export function parseDateParts(
-  dayValue: string,
-  monthValue: string,
-  yearValue: string,
-  today = new Date(),
-): { ok: true; iso: string } | { ok: false; error: string } {
-  if (!dayValue || !monthValue || !yearValue) {
-    return { ok: false, error: "Enter a day, month, and four-digit year." };
-  }
-
-  if (![dayValue, monthValue, yearValue].every((value) => /^\d+$/.test(value))) {
-    return { ok: false, error: "Use numbers only for the date." };
-  }
-
-  const day = Number(dayValue);
-  const month = Number(monthValue);
-  const year = Number(yearValue);
-  const currentYear = today.getUTCFullYear();
-
-  if (yearValue.length !== 4 || year < 1900 || year > currentYear) {
-    return {
-      ok: false,
-      error: `Enter a year from 1900 to ${currentYear}.`,
-    };
-  }
-
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return { ok: false, error: "That date does not exist. Check the day and month." };
-  }
-
-  if (date.getTime() > utcMidnight(today)) {
-    return { ok: false, error: "Enter a date that has already happened." };
-  }
-
-  return {
-    ok: true,
-    iso: `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
-  };
-}
-
 export function getTemperature(distanceDays: number): Temperature {
   if (distanceDays === 0) return "correct";
   if (distanceDays <= 14) return "burning";

@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
-import { MAX_GUESSES, parseDateParts, type RoundState } from "../lib/game";
+import { parseDateParts } from "../lib/duel-date";
+import { MAX_GUESSES, type RoundState } from "../lib/game";
 
 function DateField({
   label,

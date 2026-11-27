@@ -5,7 +5,6 @@ import {
   getDailyPuzzle,
   getTemperature,
   hydrateRound,
-  parseDateParts,
   pickUnlimitedEvent,
   type HistoricalEvent,
 } from "./game";
@@ -20,22 +19,6 @@ const events: HistoricalEvent[] = DAILY_EVENT_IDS.map((id) => ({
   sources: [{ label: "Example", url: "https://example.com" }],
 }));
 const event = events[0];
-const today = new Date("2025-11-05T12:00:00Z");
-
-describe("date parsing", () => {
-  it("accepts valid leap days and rejects impossible dates", () => {
-    expect(parseDateParts("29", "02", "2000", today)).toEqual({
-      ok: true,
-      iso: "2000-02-29",
-    });
-    expect(parseDateParts("29", "02", "1900", today)).toMatchObject({ ok: false });
-    expect(parseDateParts("31", "04", "2020", today)).toMatchObject({ ok: false });
-  });
-
-  it("rejects future dates without consuming a guess", () => {
-    expect(parseDateParts("06", "11", "2025", today)).toMatchObject({ ok: false });
-  });
-});
 
 describe("guess feedback", () => {
   it.each([
