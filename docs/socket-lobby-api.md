@@ -75,6 +75,6 @@ To make credential retries possible, the original room retains one private remat
 
 ## Stage boundary and remaining work
 
-Stages 4–6 provide the server match flow. Stage 7 connects the browser through the local Vite proxy; two isolated Chrome sessions have reached match start via an invite. Stage 8 still owns round, results, and rematch presentation.
+The browser now plays five-round matches and can join a new rematch lobby through the local Vite proxy. The [Stage 8 progress notes](guess-the-date-duel-implementation-plan.md#progress) record the two-session browser check.
 
-Stage 9 still owns disconnect forfeiture, periodic cleanup, connection/per-IP/guess rate limits, and production origin allowlisting. Neither the HTTP server nor these sockets are ready for public deployment yet. Tests use real local WebSocket clients, including a controlled-clock five-round match and one real 60-second timeout test; polling-only connections, full browser gameplay, and deployed proxies remain unverified.
+Stage 9 still owns disconnect forfeiture, periodic cleanup, connection/per-IP/guess rate limits, and production origin allowlisting. Neither the HTTP server nor these sockets are ready for public deployment yet. Tests use real local WebSocket clients, including a controlled-clock five-round match and one real 60-second timeout test; polling-only connections and deployed proxies remain unverified.
